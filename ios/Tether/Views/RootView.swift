@@ -41,6 +41,7 @@ struct RootView: View {
                     .font(.footnote)
                     .padding(.horizontal, 14).padding(.vertical, 10)
                     .background(.thinMaterial, in: Capsule())
+                    .tetherLiquidGlass(cornerRadius: 24)
                     .padding(.bottom, 64)
                     .onTapGesture { model.lastError = nil }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -155,8 +156,11 @@ struct StatusStrip: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 6)
-        .background(stripBackground)
+        .padding(.vertical, 8)
+        .background(stripBackground.opacity(0.48), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .tetherLiquidGlass(cornerRadius: 14)
+        .padding(.horizontal, 8)
+        .padding(.top, 4)
     }
 
     private var dotColor: Color {
