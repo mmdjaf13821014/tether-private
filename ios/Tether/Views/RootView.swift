@@ -34,6 +34,8 @@ struct RootView: View {
                     .tabItem { Label("Link", systemImage: "antenna.radiowaves.left.and.right") }
                     .tag(Router.Tab.link)
             }
+            // Keep the native iOS 26 tab bar visible so the system renders its Liquid Glass surface.
+            .toolbarBackground(.visible, for: .tabBar)
         }
         .overlay(alignment: .bottom) {
             if let err = model.lastError {
