@@ -12,13 +12,16 @@ permissions:
 jobs:
   build-ipa:
     name: Build unsigned iOS IPA with iOS 26 SDK
-    runs-on: macos-26
+    runs-on: macos-15
     timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: liquid-glass-ios26
+
+      - name: Select Xcode 26.3 (iOS 26.2 SDK)
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
 
       - name: Show Xcode version
         run: xcodebuild -version
