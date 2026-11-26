@@ -7,6 +7,10 @@ import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -19,6 +23,7 @@ import android.provider.Settings
 import android.provider.CallLog
 import android.provider.ContactsContract
 import android.view.Gravity
+import android.view.WindowInsets
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
@@ -73,18 +78,48 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         app = application as TetherApp
-        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(20), dp(16), dp(24)) }
+        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(20), dp(20), dp(24)) }
         shell = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(color(R.color.background)) }
-        val scroll = ScrollView(this).apply { addView(root); setBackgroundColor(color(R.color.background)) }
+        val scroll = ScrollView(this).apply {
+            isFillViewport = true
+            clipToPadding = false
+            addView(root)
+            setBackgroundColor(color(R.color.background))
+        }
         shell.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         tabs = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setPadding(dp(4), dp(7), dp(4), dp(7))
-            background = GradientDrawable().apply { setColor(color(R.color.surface)); setStroke(dp(1), color(R.color.muted)); cornerRadius = dp(18).toFloat() }
+            setPadding(dp(5), dp(5), dp(5), dp(5))
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(29, 30, 34))
+                setStroke(dp(1), Color.rgb(52, 54, 60))
+                cornerRadius = dp(24).toFloat()
+            }
         }
-        shell.addView(tabs, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(10), dp(4), dp(10), dp(10)) })
+        shell.addView(tabs, LinearLayout.LayoutParams(-1, dp(76)).apply {
+            setMargins(dp(14), dp(6), dp(14), dp(8))
+        })
         setContentView(shell)
+        window.statusBarColor = color(R.color.background)
+        window.navigationBarColor = color(R.color.background)
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            window.isNavigationBarContrastEnforced = false
+            window.isStatusBarContrastEnforced = false
+        }
+        shell.setOnApplyWindowInsetsListener { _, insets ->
+            val topInset = if (android.os.Build.VERSION.SDK_INT >= 30)
+                insets.getInsets(WindowInsets.Type.statusBars()).top else insets.systemWindowInsetTop
+            val bottomInset = if (android.os.Build.VERSION.SDK_INT >= 30)
+                insets.getInsets(WindowInsets.Type.navigationBars()).bottom else insets.systemWindowInsetBottom
+            root.setPadding(dp(20), dp(12) + topInset, dp(20), dp(24))
+            tabs.setPadding(dp(5), dp(5), dp(5), dp(5))
+            val lp = tabs.layoutParams as LinearLayout.LayoutParams
+            lp.bottomMargin = dp(8) + bottomInset
+            tabs.layoutParams = lp
+            insets
+        }
+        shell.requestApplyInsets()
         if (missingPerms().isEmpty()) LinkService.start(this) else requestPermissions(missingPerms(), 1)
     }
 
@@ -116,23 +151,23 @@ class MainActivity : Activity() {
     private fun renderTabs() {
         tabs.removeAllViews()
         val entries = listOf(
-            Triple("keypad", "⌗", "Keypad"),
-            Triple("contacts", "♙", "Contacts"),
-            Triple("recent", "◷", "Recents"),
-            Triple("settings", "⚙", "Settings")
+            Triple("keypad", "keypad", "Keypad"),
+            Triple("contacts", "contacts", "Contacts"),
+            Triple("recent", "recent", "Recents"),
+            Triple("settings", "settings", "Settings")
         )
-        for ((key, glyph, title) in entries) {
+        for ((key, icon, title) in entries) {
             val active = selectedTab == key
             val item = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
                 isClickable = true
                 isFocusable = true
-                setPadding(dp(3), dp(7), dp(3), dp(6))
                 background = if (active) GradientDrawable().apply {
-                    setColor(Color.rgb(48, 48, 52)); cornerRadius = dp(13).toFloat()
+                    setColor(Color.rgb(42, 55, 78))
+                    cornerRadius = dp(19).toFloat()
                 } else null
-                layoutParams = LinearLayout.LayoutParams(0, dp(58), 1f).apply {
+                layoutParams = LinearLayout.LayoutParams(0, dp(64), 1f).apply {
                     setMargins(dp(2), 0, dp(2), 0)
                 }
                 setOnClickListener {
@@ -142,75 +177,215 @@ class MainActivity : Activity() {
                     }
                 }
             }
-            item.addView(TextView(this).apply {
-                text = glyph
-                gravity = Gravity.CENTER
-                textSize = 22f
-                setTextColor(if (active) Color.rgb(10, 132, 255) else Color.rgb(174, 174, 178))
-            })
+            item.addView(TabIcon(icon, active), LinearLayout.LayoutParams(dp(27), dp(27)))
             item.addView(TextView(this).apply {
                 text = title
                 gravity = Gravity.CENTER
                 textSize = 10f
-                setTextColor(if (active) Color.rgb(10, 132, 255) else Color.rgb(174, 174, 178))
+                setTextColor(if (active) Color.rgb(125, 176, 255) else Color.rgb(174, 176, 183))
                 setTypeface(typeface, if (active) Typeface.BOLD else Typeface.NORMAL)
+                setPadding(0, dp(2), 0, 0)
             })
             tabs.addView(item)
         }
     }
 
-    private fun sectionHeader(title: String) {
+    private inner class TabIcon(private val kind: String, private val active: Boolean) : View(this@MainActivity) {
+        private val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (active) Color.rgb(82, 153, 255) else Color.rgb(174, 176, 183)
+            style = Paint.Style.STROKE
+            strokeWidth = dp(1.8).toFloat()
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            val cx = width / 2f
+            val cy = height / 2f
+            val r = dp(8).toFloat()
+            when (kind) {
+                "keypad" -> {
+                    for (row in -1..1) for (col in -1..1) {
+                        canvas.drawCircle(cx + col * dp(7), cy + row * dp(7), dp(1.6).toFloat(), p)
+                    }
+                    canvas.drawCircle(cx - dp(7), cy + dp(14), dp(1.5).toFloat(), p)
+                    canvas.drawCircle(cx, cy + dp(14), dp(1.5).toFloat(), p)
+                    canvas.drawCircle(cx + dp(7), cy + dp(14), dp(1.5).toFloat(), p)
+                }
+                "contacts" -> {
+                    canvas.drawCircle(cx, cy - dp(5), dp(4).toFloat(), p)
+                    val oval = RectF(cx - dp(10), cy, cx + dp(10), cy + dp(17))
+                    canvas.drawArc(oval, 190f, 160f, false, p)
+                }
+                "recent" -> {
+                    canvas.drawCircle(cx, cy, r, p)
+                    canvas.drawLine(cx, cy, cx, cy - dp(5), p)
+                    canvas.drawLine(cx, cy, cx + dp(5), cy + dp(3), p)
+                }
+                else -> {
+                    canvas.drawCircle(cx, cy, dp(4).toFloat(), p)
+                    for (a in 0..7) {
+                        val angle = Math.toRadians(a * 45.0)
+                        val x1 = cx + kotlin.math.cos(angle).toFloat() * dp(7)
+                        val y1 = cy + kotlin.math.sin(angle).toFloat() * dp(7)
+                        val x2 = cx + kotlin.math.cos(angle).toFloat() * dp(11)
+                        val y2 = cy + kotlin.math.sin(angle).toFloat() * dp(11)
+                        canvas.drawLine(x1, y1, x2, y2, p)
+                    }
+                    canvas.drawCircle(cx, cy, dp(11).toFloat(), p)
+                }
+            }
+        }
+    }
+
+    private fun sectionHeader(title: String, subtitle: String? = null) {
         root.addView(TextView(this).apply {
             text = title
             textSize = 32f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(color(R.color.text))
-            setPadding(dp(2), dp(8), 0, dp(18))
+            setPadding(0, dp(8), 0, dp(3))
+        })
+        if (subtitle != null) root.addView(label(subtitle, R.color.muted, 13f).apply {
+            setPadding(0, 0, 0, dp(15))
         })
     }
 
+    private fun avatar(name: String, size: Int = 48): View {
+        val initials = name.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+            .take(2).mapNotNull { it.firstOrNull()?.uppercaseChar() }.joinToString("")
+            .ifBlank { "?" }
+        val palette = listOf(
+            Color.rgb(71, 102, 153), Color.rgb(105, 83, 143), Color.rgb(67, 119, 105),
+            Color.rgb(145, 91, 77), Color.rgb(91, 111, 126), Color.rgb(126, 101, 75)
+        )
+        val bg = palette[(name.hashCode().and(Int.MAX_VALUE)) % palette.size]
+        return TextView(this).apply {
+            text = initials
+            gravity = Gravity.CENTER
+            textSize = if (size >= 48) 16f else 13f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply { setColor(bg); shape = GradientDrawable.OVAL }
+            layoutParams = LinearLayout.LayoutParams(dp(size), dp(size))
+        }
+    }
+
+    private fun dividerLine(): View = View(this).apply {
+        setBackgroundColor(Color.rgb(48, 50, 55))
+        layoutParams = LinearLayout.LayoutParams(-1, dp(1)).apply {
+            leftMargin = dp(62)
+        }
+    }
+
     private fun renderKeypad() {
-        root.addView(TextView(this).apply { text = "Keypad"; textSize = 32f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
+        sectionHeader("Keypad", "Enter a number to make a call")
         val display = TextView(this).apply {
-            text = dialNumber.ifEmpty { "Enter a number" }; textSize = 26f; gravity = Gravity.CENTER
+            text = dialNumber.ifEmpty { "Enter number" }
+            textSize = if (dialNumber.length > 14) 22f else 30f
+            gravity = Gravity.CENTER
             setTextColor(color(if (dialNumber.isEmpty()) R.color.muted else R.color.text))
-            setPadding(0, dp(24), 0, dp(18))
+            setPadding(0, dp(10), 0, dp(20))
             setOnLongClickListener { dialNumber = ""; render(); true }
         }
         root.addView(display)
+        val letters = mapOf("2" to "ABC", "3" to "DEF", "4" to "GHI", "5" to "JKL",
+            "6" to "MNO", "7" to "PQRS", "8" to "TUV", "9" to "WXYZ")
         val grid = listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf("*", "0", "#"))
         for (line in grid) {
             val row = LinearLayout(this).apply { gravity = Gravity.CENTER; orientation = LinearLayout.HORIZONTAL }
             for (digit in line) {
-                val cell = TextView(this).apply {
-                    text = digit; textSize = 27f; gravity = Gravity.CENTER; setTextColor(color(R.color.text))
-                    background = GradientDrawable().apply { setColor(Color.rgb(45, 45, 48)); shape = GradientDrawable.OVAL }
-                    layoutParams = LinearLayout.LayoutParams(dp(76), dp(76)).apply { setMargins(dp(12), dp(5), dp(12), dp(5)) }
-                    setOnClickListener { dialNumber += digit; display.text = dialNumber; display.setTextColor(color(R.color.text)) }
+                val key = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER
+                    background = GradientDrawable().apply {
+                        setColor(Color.rgb(34, 36, 41))
+                        setStroke(dp(1), Color.rgb(49, 52, 59))
+                        shape = GradientDrawable.OVAL
+                    }
+                    layoutParams = LinearLayout.LayoutParams(dp(76), dp(76)).apply {
+                        setMargins(dp(10), dp(5), dp(10), dp(5))
+                    }
+                    isClickable = true
+                    isFocusable = true
+                    setOnClickListener {
+                        dialNumber += digit
+                        display.text = dialNumber
+                        display.textSize = if (dialNumber.length > 14) 22f else 30f
+                        display.setTextColor(color(R.color.text))
+                    }
                 }
-                row.addView(cell)
+                key.addView(TextView(this).apply {
+                    text = digit
+                    textSize = 27f
+                    gravity = Gravity.CENTER
+                    setTextColor(color(R.color.text))
+                    setTypeface(typeface, Typeface.NORMAL)
+                })
+                if (letters[digit] != null) key.addView(TextView(this).apply {
+                    text = letters[digit]
+                    textSize = 8f
+                    gravity = Gravity.CENTER
+                    letterSpacing = 0.16f
+                    setTextColor(Color.rgb(160, 164, 174))
+                })
+                row.addView(key)
             }
             root.addView(row)
         }
-        val actions = LinearLayout(this).apply { gravity = Gravity.CENTER; orientation = LinearLayout.HORIZONTAL }
-        actions.addView(button("Call") {
-            if (dialNumber.isNotBlank()) {
-                try { startActivity(Intent(Intent.ACTION_CALL, Uri.fromParts("tel", dialNumber, null))) }
-                catch (_: Throwable) { Toast.makeText(this, "تماس برقرار نشد", Toast.LENGTH_LONG).show() }
+        val actions = LinearLayout(this).apply {
+            gravity = Gravity.CENTER
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, dp(8), 0, dp(8))
+        }
+        val call = TextView(this).apply {
+            text = "☎"
+            textSize = 27f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(36, 170, 91))
+                shape = GradientDrawable.OVAL
             }
-        })
-        actions.addView(button("⌫", secondary = true) {
-            if (dialNumber.isNotEmpty()) dialNumber = dialNumber.dropLast(1)
-            display.text = dialNumber.ifEmpty { "Enter a number" }
-        })
+            layoutParams = LinearLayout.LayoutParams(dp(62), dp(62)).apply {
+                setMargins(dp(16), dp(3), dp(16), dp(3))
+            }
+            setOnClickListener {
+                if (dialNumber.isNotBlank()) {
+                    try { startActivity(Intent(Intent.ACTION_CALL, Uri.fromParts("tel", dialNumber, null))) }
+                    catch (_: Throwable) { Toast.makeText(this@MainActivity, "Call could not be started", Toast.LENGTH_LONG).show() }
+                }
+            }
+        }
+        val erase = TextView(this).apply {
+            text = "⌫"
+            textSize = 24f
+            gravity = Gravity.CENTER
+            setTextColor(color(R.color.text))
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(39, 41, 47))
+                shape = GradientDrawable.OVAL
+            }
+            layoutParams = LinearLayout.LayoutParams(dp(52), dp(52)).apply {
+                setMargins(dp(16), dp(3), dp(16), dp(3))
+            }
+            setOnClickListener {
+                if (dialNumber.isNotEmpty()) dialNumber = dialNumber.dropLast(1)
+                display.text = dialNumber.ifEmpty { "Enter number" }
+                display.textSize = if (dialNumber.length > 14) 22f else 30f
+            }
+            setOnLongClickListener { dialNumber = ""; display.text = "Enter number"; true }
+        }
+        actions.addView(call)
+        actions.addView(erase)
         root.addView(actions)
     }
 
     private fun renderContacts() {
-        root.addView(TextView(this).apply { text = "Contacts"; textSize = 32f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
+        sectionHeader("Contacts", "Your saved contacts")
         if (checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            root.addView(label("برای نمایش مخاطبین، دسترسی مخاطبین را فعال کن.", R.color.warn))
-            root.addView(button("اعطای دسترسی") { requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 3) })
+            root.addView(label("Allow access to show your contacts.", R.color.warn))
+            root.addView(button("Grant access") { requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 3) })
             return
         }
         try {
@@ -218,58 +393,105 @@ class MainActivity : Activity() {
             contentResolver.query(uri, arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER), null, null,
                 ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " COLLATE LOCALIZED ASC")?.use { cursor ->
                 val seen = HashSet<String>()
+                var count = 0
                 while (cursor.moveToNext()) {
                     val name = cursor.getString(0).orEmpty()
                     val number = cursor.getString(1).orEmpty()
                     if (number.isBlank() || !seen.add(name + "|" + number)) continue
+                    val displayName = name.ifBlank { number }
                     val row = LinearLayout(this).apply {
-                        orientation = LinearLayout.VERTICAL; setPadding(0, dp(10), 0, dp(10))
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.CENTER_VERTICAL
+                        setPadding(0, dp(9), 0, dp(9))
+                        isClickable = true
+                        isFocusable = true
                         setOnClickListener { dialNumber = number; selectedTab = "keypad"; render() }
                     }
-                    row.addView(label(name.ifBlank { number }, R.color.text, 16f))
-                    row.addView(label(number, R.color.muted, 13f))
+                    row.addView(avatar(displayName))
+                    val details = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply {
+                            leftMargin = dp(14)
+                        }
+                    }
+                    details.addView(label(displayName, R.color.text, 16f).apply {
+                        setTypeface(typeface, Typeface.MEDIUM)
+                    })
+                    details.addView(label(number, R.color.muted, 13f))
+                    row.addView(details)
+                    row.addView(TextView(this).apply {
+                        text = "›"; textSize = 28f; gravity = Gravity.CENTER
+                        setTextColor(Color.rgb(132, 137, 148))
+                        layoutParams = LinearLayout.LayoutParams(dp(28), dp(44))
+                    })
                     root.addView(row)
+                    root.addView(dividerLine())
+                    count++
                 }
+                if (count == 0) root.addView(label("No contacts found.", R.color.muted))
             }
-        } catch (_: SecurityException) { root.addView(label("دسترسی به مخاطبین موجود نیست.", R.color.warn)) }
+        } catch (_: SecurityException) { root.addView(label("Contacts permission is not available.", R.color.warn)) }
     }
 
     private fun renderRecent() {
-        root.addView(TextView(this).apply { text = "Recents"; textSize = 32f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
+        sectionHeader("Recents", "Your recent calls")
         if (checkSelfPermission(Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
-            root.addView(label("برای نمایش سابقه تماس، دسترسی تماس‌ها را فعال کن.", R.color.warn))
-            root.addView(button("اعطای دسترسی") { requestPermissions(arrayOf(Manifest.permission.READ_CALL_LOG), 4) })
+            root.addView(label("Allow access to show recent calls.", R.color.warn))
+            root.addView(button("Grant access") { requestPermissions(arrayOf(Manifest.permission.READ_CALL_LOG), 4) })
             return
         }
         try {
             val projection = arrayOf(CallLog.Calls._ID, CallLog.Calls.NUMBER, CallLog.Calls.CACHED_NAME, CallLog.Calls.TYPE, CallLog.Calls.DATE)
             contentResolver.query(CallLog.Calls.CONTENT_URI, projection, null, null, CallLog.Calls.DATE + " DESC")?.use { cursor ->
                 var shown = 0
-                val fmt = SimpleDateFormat("MM/dd  HH:mm", Locale.getDefault())
+                val fmt = SimpleDateFormat("MMM d  ·  HH:mm", Locale.getDefault())
                 while (cursor.moveToNext() && shown < 100) {
                     val number = cursor.getString(1).orEmpty()
                     if (number.isBlank()) continue
                     val name = cursor.getString(2)?.takeIf { it.isNotBlank() } ?: number
-                    val kind = when (cursor.getInt(3)) {
-                        CallLog.Calls.INCOMING_TYPE -> "دریافتی"
-                        CallLog.Calls.OUTGOING_TYPE -> "خروجی"
-                        CallLog.Calls.MISSED_TYPE -> "ازدست‌رفته"
-                        CallLog.Calls.REJECTED_TYPE -> "ردشده"
-                        else -> "تماس"
+                    val type = cursor.getInt(3)
+                    val kind = when (type) {
+                        CallLog.Calls.INCOMING_TYPE -> "Incoming"
+                        CallLog.Calls.OUTGOING_TYPE -> "Outgoing"
+                        CallLog.Calls.MISSED_TYPE -> "Missed"
+                        CallLog.Calls.REJECTED_TYPE -> "Rejected"
+                        else -> "Call"
                     }
                     val date = fmt.format(Date(cursor.getLong(4)))
                     val row = LinearLayout(this).apply {
-                        orientation = LinearLayout.VERTICAL; setPadding(0, dp(9), 0, dp(9))
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.CENTER_VERTICAL
+                        setPadding(0, dp(9), 0, dp(9))
+                        isClickable = true
+                        isFocusable = true
                         setOnClickListener { dialNumber = number; selectedTab = "keypad"; render() }
                     }
-                    row.addView(label(name, R.color.text, 16f))
-                    row.addView(label("$kind  ·  $date  ·  $number", R.color.muted, 12f))
+                    row.addView(avatar(name))
+                    val details = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) }
+                    }
+                    details.addView(label(name, R.color.text, 16f).apply { setTypeface(typeface, Typeface.MEDIUM) })
+                    val metaColor = if (type == CallLog.Calls.MISSED_TYPE) R.color.bad else R.color.muted
+                    details.addView(label("$kind  ·  $date", metaColor, 12f))
+                    row.addView(details)
+                    row.addView(TextView(this).apply {
+                        text = "☎"; textSize = 18f; gravity = Gravity.CENTER
+                        setTextColor(Color.rgb(105, 190, 132))
+                        layoutParams = LinearLayout.LayoutParams(dp(40), dp(44))
+                        setOnClickListener {
+                            dialNumber = number
+                            try { startActivity(Intent(Intent.ACTION_CALL, Uri.fromParts("tel", number, null))) }
+                            catch (_: Throwable) { Toast.makeText(this@MainActivity, "Call could not be started", Toast.LENGTH_LONG).show() }
+                        }
+                    })
                     root.addView(row)
+                    root.addView(dividerLine())
                     shown++
                 }
-                if (shown == 0) root.addView(label("هنوز تماسی ثبت نشده است.", R.color.muted))
-            } ?: root.addView(label("سابقه تماس در دسترس نیست.", R.color.warn))
-        } catch (_: SecurityException) { root.addView(label("دسترسی به سابقه تماس داده نشده است.", R.color.warn)) }
+                if (shown == 0) root.addView(label("No recent calls yet.", R.color.muted))
+            } ?: root.addView(label("Call history is not available.", R.color.warn))
+        } catch (_: SecurityException) { root.addView(label("Call log permission was not granted.", R.color.warn)) }
     }
 
     private fun render() {
