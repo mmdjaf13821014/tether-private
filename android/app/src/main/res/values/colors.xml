@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Dark first: these are the colors in both day and night mode. -->
 <resources>
-    <color name="accent">#0A84FF</color>
-    <color name="background">#000000</color>
-    <color name="surface">#1C1C1E</color>
-    <color name="text">#F5F5F7</color>
-    <color name="muted">#8E8E93</color>
+    <color name="accent">#4D91FF</color>
+    <color name="background">#101115</color>
+    <color name="surface">#1C1E24</color>
+    <color name="text">#F4F5F7</color>
+    <color name="muted">#A0A4AE</color>
     <color name="ok">#4CD787</color>
     <color name="warn">#F0B03F</color>
     <color name="bad">#FF5F57</color>
-    <color name="icon_bg">#111113</color>
+    <color name="icon_bg">#15171C</color>
     <bool name="light_bars">false</bool>
 </resources>
