@@ -1,0 +1,13 @@
+{
+  "t": "call.dial",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "num": "+10000000007",
+      "sub": 3
+    },
+    "old": {
+      "num": "+10000000007"
+    }
+  }
+}

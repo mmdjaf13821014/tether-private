@@ -1,0 +1,9 @@
+{
+  "t": "ringer.set",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "mode": "silent"
+    }
+  }
+}

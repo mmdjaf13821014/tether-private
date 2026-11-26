@@ -1,0 +1,45 @@
+{
+  "t": "contacts.batch",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "items": [
+        {
+          "id": 42,
+          "name": "Test Person",
+          "phones": [
+            {
+              "n": "+10000000002",
+              "type": "mobile"
+            },
+            {
+              "n": "+10000000003",
+              "type": "other",
+              "label": "Studio"
+            }
+          ],
+          "emails": [
+            "test@example.com"
+          ],
+          "starred": true,
+          "photo": "/9j/4AAQSkZJRg=="
+        },
+        {
+          "id": 43,
+          "name": "Old Person",
+          "phones": [
+            {
+              "n": "+10000000004",
+              "type": "home"
+            }
+          ],
+          "emails": [],
+          "starred": false
+        }
+      ],
+      "more": false,
+      "version": "v17",
+      "full": true
+    }
+  }
+}

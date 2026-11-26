@@ -1,0 +1,23 @@
+# Categories for GitHub's generated release notes, by pull request label (labels: .github/labels.yml).
+changelog:
+  exclude:
+    labels: ["skip-changelog"]
+  categories:
+    - title: Breaking changes
+      labels: ["breaking"]
+    - title: Protocol
+      labels: ["protocol"]
+    - title: New features
+      labels: ["enhancement"]
+    - title: Bug fixes
+      labels: ["bug"]
+    - title: Call audio
+      labels: ["audio"]
+    - title: SDKs
+      labels: ["sdk-swift", "sdk-kotlin"]
+    - title: Documentation
+      labels: ["documentation"]
+    - title: Dependencies and CI
+      labels: ["dependencies", "ci"]
+    - title: Other changes
+      labels: ["*"]

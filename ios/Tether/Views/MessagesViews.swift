@@ -405,42 +405,30 @@ private struct ThreadProfileHeader: View {
     let number: String
     let photo: String?
     let isKnown: Bool
-    private let avatarSize: CGFloat = 72
+    private let avatarSize: CGFloat = 80
 
-    /// Floating iMessage-style identity: avatar above a compact name/number capsule.
+    /// Compact iMessage-style identity: a slightly larger portrait with its glass identity capsule close beneath it.
     var body: some View {
-        VStack(spacing: 12) {
-            Group {
-                if !isKnown {
-                    ZStack {
-                        Circle().fill(Color(uiColor: .systemBlue))
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 34, weight: .regular))
-                            .foregroundStyle(.white)
-                    }
-                    .frame(width: avatarSize, height: avatarSize)
-                } else {
-                    Avatar(name: name, photo: photo, size: avatarSize)
-                }
-            }
-            .clipShape(Circle())
+        VStack(spacing: 5) {
+            Avatar(name: isKnown ? name : number,
+                   photo: isKnown ? photo : nil,
+                   size: avatarSize)
 
             Text(isKnown ? name : number)
-                .font(.subheadline.weight(.semibold))
+                .font(.body.weight(.semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 6)
-                .tetherLiquidGlass(cornerRadius: 18)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .tetherLiquidGlass(cornerRadius: 20)
                 .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.top, 2)
         .frame(maxWidth: .infinity)
-        .frame(height: 128)
+        .frame(height: 132)
     }
 }
-
 /// "Today 13:20" / "Yesterday 09:05" / "Mon 13:20" / "12 Nov 2026 at 13:20", as Messages writes it.
 func transcriptTime(_ ms: Int64) -> String {
     let d = Date(millis: ms)

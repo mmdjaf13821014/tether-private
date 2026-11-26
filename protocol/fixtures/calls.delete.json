@@ -1,0 +1,15 @@
+{
+  "t": "calls.delete",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "ids": [
+        900,
+        901
+      ]
+    },
+    "all": {
+      "all": true
+    }
+  }
+}

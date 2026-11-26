@@ -1,0 +1,15 @@
+{
+  "t": "sms.delete",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "ids": [
+        118,
+        120
+      ]
+    },
+    "thread": {
+      "thread": 7
+    }
+  }
+}

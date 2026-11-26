@@ -1,0 +1,21 @@
+{
+  "t": "net.set",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "what": "rat",
+      "on": true,
+      "slot": 0,
+      "mode": "4G"
+    },
+    "dataSub": {
+      "what": "dataSub",
+      "on": true,
+      "sub": 2
+    },
+    "old": {
+      "what": "data",
+      "on": false
+    }
+  }
+}

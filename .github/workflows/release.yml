@@ -1,0 +1,233 @@
+# Builds and publishes a GitHub Release when a version tag (v1.2.3, v1.2.3-rc.1) is pushed: Android APKs of the A54
+# app and the Android client, an unsigned iPhone app (.ipa) for sideloading tools that re-sign, SHA256SUMS and build
+# provenance attestations, and altstore.json (an AltStore / SideStore source for the IPA, tools/altstore-source.py).
+# Tags are made by tools/release.sh; see docs/RELEASING.md.
+name: Release
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build, e.g. v1.2.0"
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+env:
+  # Maven Central answers shared runners with 429 Too Many Requests at busy times; Google's mirror of it does not.
+  TETHER_MAVEN_CENTRAL_MIRROR: https://maven-central.storage-download.googleapis.com/maven2/
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  check:
+    name: Tag matches VERSION
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - id: v
+        run: |
+          version=$(tr -d '[:space:]' < VERSION)
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::tag $TAG does not match VERSION ($version)"; exit 1
+          fi
+          marketing=${version%%-*}
+          grep -q "^    MARKETING_VERSION: \"$marketing\"" ios/project.yml ||
+            { echo "::error::ios/project.yml MARKETING_VERSION is not $marketing (run tools/release.sh)"; exit 1; }
+          sudo apt-get install -y zsh >/dev/null
+          code=$(zsh tools/release.sh --code "$version")
+          grep -q "^    CURRENT_PROJECT_VERSION: \"$code\"" ios/project.yml ||
+            { echo "::error::ios/project.yml CURRENT_PROJECT_VERSION is not $code (run tools/release.sh)"; exit 1; }
+          zsh tools/release.sh --notes "$version" > /dev/null ||
+            { echo "::error::CHANGELOG.md has no section '## $version'"; exit 1; }
+          case $version in *-*) pre=true ;; *) pre=false ;; esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$pre" >> "$GITHUB_OUTPUT"
+
+  android:
+    name: Android APKs
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Release key from the repository secrets
+        id: key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.TETHER_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.TETHER_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.TETHER_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.TETHER_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            {
+              echo "tether.signing.storeFile=$RUNNER_TEMP/release.jks"
+              echo "tether.signing.storePassword=$KEYSTORE_PASSWORD"
+              echo "tether.signing.keyAlias=$KEY_ALIAS"
+              echo "tether.signing.keyPassword=$KEY_PASSWORD"
+            } >> android/local.properties
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::no release key in the repository secrets: the APKs are signed with a throw-away debug key"
+            echo "suffix=-debug-signed" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Unit tests and release builds
+        working-directory: android
+        run: >
+          ./gradlew --console=plain
+          :core:testDebugUnitTest :app:testDebugUnitTest :helper:testDebugUnitTest :client:testDebugUnitTest
+          :app:assembleRelease :client:assembleRelease
+      - name: Name the APKs
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+          SUFFIX: ${{ steps.key.outputs.suffix }}
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/Tether-A54-$VERSION$SUFFIX.apk"
+          cp android/client/build/outputs/apk/release/client-release.apk "dist/Tether-Client-$VERSION$SUFFIX.apk"
+          aapt2=$(find "$ANDROID_HOME/build-tools" -name aapt2 | sort | tail -1)
+          "$aapt2" dump badging "dist/Tether-A54-$VERSION$SUFFIX.apk" | head -1
+          rm -f "$RUNNER_TEMP/release.jks"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android
+          path: dist/
+          if-no-files-found: error
+
+  apple:
+    name: iPhone app (unsigned) and Swift package
+    needs: check
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - name: Swift package TetherCore builds at this tag
+        working-directory: ios/TetherCore
+        run: swift build -c release
+      - name: XcodeGen
+        run: brew install xcodegen && cd ios && xcodegen generate --quiet
+      - name: iPhone app (Release, unsigned)
+        working-directory: ios
+        run: >
+          xcodebuild -project Tether.xcodeproj -scheme Tether -configuration Release
+          -destination 'generic/platform=iOS' -derivedDataPath build-release -skipMacroValidation
+          CODE_SIGNING_ALLOWED=NO build -quiet
+      - name: Package the IPA
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          app=$(find ios/build-release/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          /usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' -c 'Print CFBundleVersion' "$app/Info.plist"
+          mkdir -p work/Payload dist
+          cp -R "$app" work/Payload/
+          (cd work && zip -qry "../dist/Tether-$VERSION-unsigned.ipa" Payload)
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    name: GitHub Release
+    needs: [check, android, apple]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: AltStore / SideStore source (stable address releases/latest/download/altstore.json)
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          sudo apt-get install -y zsh >/dev/null
+          zsh tools/release.sh --notes "$VERSION" > "$RUNNER_TEMP/ipa-notes.txt"
+          ipa=$(ls dist/*.ipa)
+          python3 tools/altstore-source.py make --ipa "$ipa" --version "$VERSION" --date "$(date -u +%Y-%m-%d)" \
+            --notes-file "$RUNNER_TEMP/ipa-notes.txt" \
+            --download-url "https://github.com/${{ github.repository }}/releases/download/$TAG/$(basename "$ipa")" \
+            --out dist/altstore.json
+          python3 tools/altstore-source.py validate dist/altstore.json
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum -- * > SHA256SUMS && cat SHA256SUMS
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            dist/*.apk
+            dist/*.ipa
+      - name: Release notes
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          sudo apt-get install -y zsh >/dev/null
+          {
+            if ls dist/*-debug-signed.apk >/dev/null 2>&1; then
+              echo "> **The APKs of this release are signed with a throw-away debug key**, not the project's release"
+              echo "> key (the repository has no signing secrets). Use them for testing; a later release-signed APK needs"
+              echo "> an uninstall first."
+              echo
+            fi
+            echo "## What changed"
+            zsh tools/release.sh --notes "$VERSION"
+            echo
+            echo "## Downloads: which one do I need?"
+            echo
+            echo "| File | Install it on |"
+            echo "| --- | --- |"
+            echo "| \`Tether-A54-$VERSION*.apk\` | **The Android phone with the SIM cards** (any Android 10+ phone, not only an A54). Everyone needs this one. |"
+            echo "| \`Tether-$VERSION-unsigned.ipa\` | **Your iPhone or iPad** (iOS 16+). Sideload it with SideStore, AltStore or Sideloadly and your own Apple ID. |"
+            echo "| \`Tether-Client-$VERSION*.apk\` | **A second Android phone** used instead of an iPhone (only if you have no iPhone). |"
+            echo
+            echo "- **AltStore / SideStore source** (add it once, then install and update from the app):"
+            echo "  \`https://github.com/${{ github.repository }}/releases/latest/download/altstore.json\`"
+            echo "- Step by step: [Install guide](https://github.com/${{ github.repository }}/blob/main/docs/INSTALL.md) ·"
+            echo "  [راهنمای فارسی](https://github.com/${{ github.repository }}/blob/main/docs/fa/README.md)"
+            echo "- A free Apple ID signs the iPhone app for 7 days; refresh it before then (your data and pairing are kept)."
+            echo "- From source: check out tag \`v$VERSION\` and follow docs/BUILD.md."
+            echo
+            echo "## Verify"
+            echo
+            echo "\`sha256sum -c SHA256SUMS\` and \`gh attestation verify <file> --repo ${{ github.repository }}\` (docs/RELEASING.md)."
+          } > notes.md
+          cat notes.md
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.check.outputs.version }}
+          PRERELEASE: ${{ needs.check.outputs.prerelease }}
+        run: |
+          flags=""
+          [ "$PRERELEASE" = true ] && flags="--prerelease"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" dist/* --title "Tether $VERSION" --notes-file notes.md --verify-tag $flags
+          fi

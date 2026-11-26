@@ -1,0 +1,9 @@
+{
+  "t": "call.mute",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "on": true
+    }
+  }
+}

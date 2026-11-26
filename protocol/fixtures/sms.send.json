@@ -1,0 +1,15 @@
+{
+  "t": "sms.send",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "to": "+10000000001",
+      "body": "Hello",
+      "sub": 2
+    },
+    "old": {
+      "to": "+10000000001",
+      "body": "Hello"
+    }
+  }
+}

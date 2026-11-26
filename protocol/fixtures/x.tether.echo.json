@@ -1,0 +1,24 @@
+{
+  "t": "x.tether.echo",
+  "dir": "both",
+  "variants": {
+    "request": {
+      "ts": 1763800000000,
+      "data": "hello"
+    },
+    "minimal": {
+      "ts": 1763800000000
+    },
+    "reply": {
+      "ts": 1763800000000,
+      "data": "hello",
+      "at": 1763800000021,
+      "via": "l2cap"
+    },
+    "reply-minimal": {
+      "ts": 1763800000000,
+      "at": 1763800000021,
+      "via": "gatt"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "t": "call.end",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "cid": "c1"
+    }
+  }
+}

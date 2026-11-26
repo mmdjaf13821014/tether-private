@@ -1,0 +1,19 @@
+{
+  "t": "sms.deleted",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "ok": true,
+      "ids": [
+        118,
+        120
+      ],
+      "thread": 7
+    },
+    "old": {
+      "ok": false,
+      "ids": [],
+      "err": "Android refused the deletion"
+    }
+  }
+}

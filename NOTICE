@@ -1,0 +1,40 @@
+Tether
+Copyright (c) 2026 The Tether authors. Licensed under the MIT License (see LICENSE).
+
+Tether's source code contains no third-party code. The Android apps are built with these libraries, fetched by
+Gradle at build time and included in the APKs you build (the Android client, `android/client`, uses only Concentus,
+ZXing core and the Kotlin standard library from this list):
+
+| Library | Version | Licence | Used for |
+| --- | --- | --- | --- |
+| Concentus (io.github.jaredmdobson:concentus) | 1.0.2 | BSD 3-Clause (the Opus licence) | Opus encoding and decoding of call audio |
+| libadb-android (com.github.MuntashirAkon) | 3.1.1 | Apache-2.0 (dual-licensed GPL-3.0-or-later or Apache-2.0; used under Apache-2.0) | Pairing with and talking to the phone's own Wireless debugging |
+| spake2-android (com.github.MuntashirAkon.spake2-java), via libadb-android | 2.2.1 | LGPL-3.0 | The SPAKE2 exchange of Wireless debugging pairing |
+| ZXing core (com.google.zxing:core) | 3.5.4 | Apache-2.0 | Drawing the pairing QR code; reading it in the Android client |
+| Conscrypt (org.conscrypt:conscrypt-android) | 2.5.3 | Apache-2.0 | TLS for Wireless debugging |
+| Bouncy Castle (bcprov, bcpkix, bcutil, jdk15to18) | 1.81 | Bouncy Castle Licence (MIT-style) | Certificates for Wireless debugging |
+| Kotlin standard library, AndroidX annotations | | Apache-2.0 | |
+| Gradle wrapper | | Apache-2.0 | Build |
+
+The iPhone app uses Apple's frameworks, one vendored C library and Swift packages fetched by Swift Package Manager
+at build time (versions pinned in `ios/Tether.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`):
+
+| Library | Version | Licence | Used for |
+| --- | --- | --- | --- |
+| libopus (`ios/TetherCore/Sources/COpus`, unmodified sources, floating point, no assembly; licence in `COPYING` there) | 1.5.2 | BSD 3-Clause | Opus decoding with packet-loss concealment and encoding on the iPhone |
+| swift-perception (Point-Free) | 2.0.12 | MIT | Observation on iOS 16 (native Observation on iOS 17 and later) |
+| swift-issue-reporting (Point-Free) | 2.1.2 | MIT | Dependency of swift-perception |
+| swift-syntax (Swift project) | 604.0.0 | Apache-2.0 with Runtime Library Exception | Build time only: swift-perception's macros |
+
+The Swift SDK (the root `Package.swift`, the same TetherCore sources and libopus as above) adds these packages, fetched
+by Swift Package Manager when another package depends on it:
+
+| Library | Version | Licence | Used for |
+| --- | --- | --- | --- |
+| swift-crypto (Apple) | 3.x or 4.x | Apache-2.0 | P-256, HKDF, AES-GCM on Linux and other platforms without CryptoKit (Apple platforms use CryptoKit; it is not linked there) |
+| swift-asn1 (Apple), via swift-crypto | | Apache-2.0 | Dependency of swift-crypto |
+| swift-docc-plugin and swift-docc-symbolkit (Swift project) | 1.x | Apache-2.0 | Build time only: `swift package generate-documentation`; nothing of it is in a built product |
+
+LGPL note: spake2-android is used as an unmodified library. If you distribute an APK built from this project, the
+LGPL-3.0 applies to that component: provide its source (https://github.com/MuntashirAkon/spake2-java) and allow it
+to be replaced, for example by pointing to this repository's build instructions.

@@ -1,0 +1,20 @@
+{
+  "t": "lists",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "blocked": [
+        "+10000000005"
+      ],
+      "muted": [
+        7
+      ],
+      "system": true,
+      "where": "system"
+    },
+    "old": {
+      "blocked": [],
+      "muted": []
+    }
+  }
+}

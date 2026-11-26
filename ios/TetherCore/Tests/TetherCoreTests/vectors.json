@@ -1,0 +1,115 @@
+{
+  "g711" : {
+    "decoded" : [
+      0,
+      0,
+      0,
+      104,
+      -104,
+      988,
+      -988,
+      7932,
+      -7932,
+      32124,
+      -32124
+    ],
+    "pcm" : [
+      0,
+      1,
+      -1,
+      100,
+      -100,
+      1000,
+      -1000,
+      8000,
+      -8000,
+      32767,
+      -32768
+    ],
+    "ulaw" : "ffff7ff272ce4ea0208000"
+  },
+  "handshakes" : [
+    {
+      "c2p_ctr1_plain" : "007b2262223a7b227473223a313730303030303030303030307d2c226964223a312c2274223a2270696e67227d",
+      "c2p_ctr1_record" : "00461000000000000000018cad95312b17ca3078cc502388df217b3d6454cd83758dd0721ddb10ec30123a1c449c2350e39f64dfa30041c300485f3a7a23dcbe09898781bf7715e4",
+      "dh1" : "9c8016a5259ffb4615685fea8e2af557f5c83218ae3d75c5b851cb1070e6f0a0",
+      "dh2" : "e3b22ca1082b9765a970b39157e5f51ab255d76ad4de562c9d55c3529281aa94",
+      "dh3" : "b755eb8e42876be77dd63af7ea4bfd38bcb1dd2bff6a522b6a06026beda7a36c",
+      "E_C" : "042d3357b3825582910ca51c6498020d346832d9f381a7871882e948a9262c39d6fab5d4a0a22a3c4314b43e13d97c1971d4075a9f844324311d0dc7ffdd0ecd9c",
+      "e_C_priv" : "dc2622941cf028747f7d89ba2a36cfcc29f24d6280d282700ac50c487e138eff",
+      "E_P" : "045827e1f19ecaff06e9dbd154c365fda8b3ded204abe4f27490e04a2713b72e5fec6ceb2af6ac492ad04a6db38bcd0ebf1ef20c859b1029da1c63483993280197",
+      "e_P_priv" : "5cbd56b7bf3f39ef539fba29e36223e971df89bd707ff3994b66ca6d9baaafd0",
+      "fin_c2p_record" : "003a100000000000000000e83d2523a5c61563035571c0f3e168f1c9d619b11c9a40c61d685adac53cd7d5ff86a3b72bf222f3b68c775e0b4936196c",
+      "fin_p2c_record" : "003a1000000000000000007d7a90fa6c7ab4f661b06293569143b4d873c04420d515a370960f695469044a493ed692ebbeb9ebca301ebc31ac4f2ad1",
+      "hello_ack_record" : "00530201045827e1f19ecaff06e9dbd154c365fda8b3ded204abe4f27490e04a2713b72e5fec6ceb2af6ac492ad04a6db38bcd0ebf1ef20c859b1029da1c6348399328019733de0d76e077b9bd51fdbcc63770bdbd",
+      "hello_record" : "0095010101042d3357b3825582910ca51c6498020d346832d9f381a7871882e948a9262c39d6fab5d4a0a22a3c4314b43e13d97c1971d4075a9f844324311d0dc7ffdd0ecd9cd496b9596508f59a6c9b23331b6849e104baa1af7e6dd4e90dd828188b544f4fea74bda22f659e5fdff374e41161db9f86d5c6fe22d1f98bda5725b3990212470926a404d3a0217e646ee66989b293fcf0",
+      "k_c2p" : "e2962628fe84f5cd2a271735aea061a9a3edfeaea7a73ad1cc448f866e40fcbf",
+      "k_p2c" : "d9412354e97b72be11e4e027152915a1cc83d78fe833fcc849a9f13c7eec9359",
+      "mode" : "pair",
+      "n_C" : "d496b9596508f59a6c9b23331b6849e1",
+      "n_P" : "33de0d76e077b9bd51fdbcc63770bdbd",
+      "p2c_ctr1_plain" : "01020007ffce4e80",
+      "p2c_ctr1_record" : "00211000000000000000015f6d6b767715aa25db9196fba75f75292760b27599f75c0b",
+      "S_C" : "04baa1af7e6dd4e90dd828188b544f4fea74bda22f659e5fdff374e41161db9f86d5c6fe22d1f98bda5725b3990212470926a404d3a0217e646ee66989b293fcf0",
+      "s_C_priv" : "eca0d380e93a8d13b3ba4cfe6db4f2d0b8cacfb13280db53cd2d482ebd532701",
+      "S_P" : "04f881ba691b30a08326515717e374034dee520157b94050470efc3f8af000832b04fc273ca4d07bdcf02b7cc752ee26ae80948df313992260b838cb8d3f996693",
+      "s_P_priv" : "46b6ff86989c2b6afb54aa4c0997bcf13f06266aa4306d0c3e56d4d38aa21816",
+      "th" : "75ed652d9fa166bccbfc0cfbe7952faa5fd1f565b8c00ded55b3d59f103404e4",
+      "token" : "93d54188c35dbc0ff39ba80cf1b5fb73"
+    },
+    {
+      "c2p_ctr1_plain" : "007b2262223a7b227473223a313730303030303030303030307d2c226964223a312c2274223a2270696e67227d",
+      "c2p_ctr1_record" : "0046100000000000000001939df0f9c85a7791b5eb8d8ce352ad6d486012bebee032d4531ad4724c4783d96bca7bd2ce77b09930419fce1114b32d3cdb27cdd3313807e9b9d7bebe",
+      "dh1" : "f2dc7e4ed8d0e4203d492662834f5b57dba985adad76078c41976c8ae2c80ef8",
+      "dh2" : "52f1ad809ea20ce225ad6ca95228aeb6ae5e65d21b190265200d75d642d03768",
+      "dh3" : "cd509fbe5ac84e51126f09367a29051a6e473f03543d0ac7cd6ca8304ca9cea1",
+      "E_C" : "0400f1d5a440125fd377dbb06900688f528845fb1edeb28c96f2122debcf94345b99daba59b706f430dbbd010f61e071c07a6f61b42e5a56fc50381055da2670fc",
+      "e_C_priv" : "7c83d2b764bf138361b4ca0a66b04b457d1b308a1af01a0df9e7a486b2b5e91e",
+      "E_P" : "04fb437be20d727e9fe147d9ad47b83151103b228ba189ec2c62b6baa218f2c047ab7fc26f8c2898d3cd8456b9e8cc5fd19d3c2b8a856da6eef8505b4f1ab26021",
+      "e_P_priv" : "ac148d0657373dbb6022f0dd424a7eeacc742c063e437cc9ea96f11392994844",
+      "fin_c2p_record" : "003a1000000000000000007914c39ea789da50a3f7a4d7f2344f1b2330f1537c7e942c71a330f8d3cfe443cf61e022a509e5774ee12b82ddb129fdcf",
+      "fin_p2c_record" : "003a10000000000000000000ac24311b86f3f50451c6a7952367c7901c00c531fb27efb0a08ca6a25ee4fbfd5d188324b95060a9f38cf9d7dc5037a2",
+      "hello_ack_record" : "0053020104fb437be20d727e9fe147d9ad47b83151103b228ba189ec2c62b6baa218f2c047ab7fc26f8c2898d3cd8456b9e8cc5fd19d3c2b8a856da6eef8505b4f1ab260215d508deda8524c9ffd99a4d672271544",
+      "hello_record" : "00950101000400f1d5a440125fd377dbb06900688f528845fb1edeb28c96f2122debcf94345b99daba59b706f430dbbd010f61e071c07a6f61b42e5a56fc50381055da2670fcc88605d0b073fddc5834c40f168c106c04baa1af7e6dd4e90dd828188b544f4fea74bda22f659e5fdff374e41161db9f86d5c6fe22d1f98bda5725b3990212470926a404d3a0217e646ee66989b293fcf0",
+      "k_c2p" : "55a8801aa30ecd99b0fa81bb680b6fa1b06d4b0277931ed2d2188c242e6fb6c6",
+      "k_p2c" : "5f2933c12b8996dcc7c43f7ea958a3d0eeed1e3b1f4967ee134702f81ddb36ea",
+      "mode" : "resume",
+      "n_C" : "c88605d0b073fddc5834c40f168c106c",
+      "n_P" : "5d508deda8524c9ffd99a4d672271544",
+      "p2c_ctr1_plain" : "01020007ffce4e80",
+      "p2c_ctr1_record" : "0021100000000000000001bf4f626980ca9d3d7c00a6a20b127ec963ed31e191ef67f3",
+      "S_C" : "04baa1af7e6dd4e90dd828188b544f4fea74bda22f659e5fdff374e41161db9f86d5c6fe22d1f98bda5725b3990212470926a404d3a0217e646ee66989b293fcf0",
+      "s_C_priv" : "eca0d380e93a8d13b3ba4cfe6db4f2d0b8cacfb13280db53cd2d482ebd532701",
+      "S_P" : "04f881ba691b30a08326515717e374034dee520157b94050470efc3f8af000832b04fc273ca4d07bdcf02b7cc752ee26ae80948df313992260b838cb8d3f996693",
+      "s_P_priv" : "46b6ff86989c2b6afb54aa4c0997bcf13f06266aa4306d0c3e56d4d38aa21816",
+      "th" : "6de106e726a094e0ee09637163cffa665f9b320d369c78a18c04b1ae950d2874",
+      "token" : ""
+    }
+  ],
+  "otp" : [
+    {
+      "code" : "482913",
+      "text" : "Your verification code is 482913. Do not share it."
+    },
+    {
+      "code" : "53218",
+      "text" : "کد تایید شما: ۵۳۲۱۸"
+    },
+    {
+      "code" : null,
+      "text" : "Meet at 1930 near gate 4"
+    },
+    {
+      "code" : "7741",
+      "text" : "G-7741 is your Google verification code."
+    }
+  ],
+  "pairing_code" : {
+    "link" : "tether://pair?c=BPiBumkbMKCDJlFXF-N0A03uUgFXuUBQRw78P4rwAIMrBPwnPKTQe9zwK3zHUu4mroCUjfMTmSJguDjLjT-ZZpM.k9VBiMNdvA_zm6gM8bX7cw.QW5kcm9pZCBwaG9uZSDCtyDYqtiz2Ko",
+    "name" : "Android phone · تست",
+    "S_P" : "04f881ba691b30a08326515717e374034dee520157b94050470efc3f8af000832b04fc273ca4d07bdcf02b7cc752ee26ae80948df313992260b838cb8d3f996693",
+    "string" : "tether1:BPiBumkbMKCDJlFXF-N0A03uUgFXuUBQRw78P4rwAIMrBPwnPKTQe9zwK3zHUu4mroCUjfMTmSJguDjLjT-ZZpM.k9VBiMNdvA_zm6gM8bX7cw.QW5kcm9pZCBwaG9uZSDCtyDYqtiz2Ko",
+    "token" : "93d54188c35dbc0ff39ba80cf1b5fb73"
+  },
+  "version" : 1
+}

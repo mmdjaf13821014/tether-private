@@ -1,0 +1,13 @@
+{
+  "t": "phone.finding",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "on": false,
+      "err": "no alarm stream"
+    },
+    "old": {
+      "on": true
+    }
+  }
+}

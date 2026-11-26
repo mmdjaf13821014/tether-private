@@ -1,0 +1,15 @@
+{
+  "t": "sms.result",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "ok": false,
+      "state": "failed",
+      "err": "no service"
+    },
+    "old": {
+      "ok": true,
+      "state": "sent"
+    }
+  }
+}

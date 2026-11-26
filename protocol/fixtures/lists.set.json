@@ -1,0 +1,16 @@
+{
+  "t": "lists.set",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "what": "block",
+      "num": "+10000000005",
+      "on": true
+    },
+    "mute": {
+      "what": "mute",
+      "thread": 7,
+      "on": false
+    }
+  }
+}

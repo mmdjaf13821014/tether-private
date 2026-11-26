@@ -1,0 +1,29 @@
+{
+  "t": "contact.add",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "name": "Test Person",
+      "phones": [
+        {
+          "n": "+10000000002",
+          "type": "mobile",
+          "label": "Studio"
+        }
+      ],
+      "emails": [
+        "test@example.com"
+      ]
+    },
+    "old": {
+      "name": "Test Person",
+      "phones": [
+        {
+          "n": "+10000000002",
+          "type": "mobile"
+        }
+      ],
+      "emails": []
+    }
+  }
+}

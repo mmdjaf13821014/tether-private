@@ -1,0 +1,14 @@
+{
+  "t": "error",
+  "dir": "both",
+  "variants": {
+    "full": {
+      "msg": "unknown type"
+    },
+    "extension": {
+      "msg": "x.org.example.unknown: unknown-type",
+      "t": "x.org.example.unknown",
+      "code": "unknown-type"
+    }
+  }
+}

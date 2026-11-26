@@ -1,0 +1,33 @@
+.DS_Store
+.build/
+.swiftpm/
+# The Swift SDK is a library: its dependency versions are resolved by the package that uses it.
+/Package.resolved
+examples/swift/*/Package.resolved
+/build-sdk/
+*.xcuserstate
+xcuserdata/
+DerivedData/
+android/.gradle/
+android/**/build/
+android/local.properties
+android/.kotlin/
+android/.idea/
+*.apk
+*.dex
+tools/out/
+ios/build/
+ios/build-check/
+ios/build-sim/
+ios/build-gen/
+ios/build-test/
+ios/build-release/
+__pycache__/
+ios/build-sim-ent/
+ios/.idea/
+
+# Local configuration (copy the .example files; see docs/BUILD.md)
+ios/Config/Local.xcconfig
+tools/local.env
+
+tools/private-patterns.txt

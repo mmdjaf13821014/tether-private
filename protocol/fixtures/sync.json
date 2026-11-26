@@ -1,0 +1,43 @@
+{
+  "t": "sync",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "sms": 120,
+      "calls": 900,
+      "contacts": "v17",
+      "codecs": [
+        "opus",
+        "pcmu"
+      ],
+      "client": {
+        "kind": "iphone",
+        "name": "Test iPhone"
+      },
+      "caps": [
+        "x.tether.echo/1"
+      ]
+    },
+    "android": {
+      "sms": 0,
+      "calls": 0,
+      "contacts": "",
+      "codecs": [
+        "opus",
+        "pcmu"
+      ],
+      "client": {
+        "kind": "android",
+        "name": "Test Android"
+      },
+      "caps": [
+        "x.tether.echo/1"
+      ]
+    },
+    "old": {
+      "sms": 0,
+      "calls": 0,
+      "contacts": ""
+    }
+  }
+}

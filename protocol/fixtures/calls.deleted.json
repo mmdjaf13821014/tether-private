@@ -1,0 +1,19 @@
+{
+  "t": "calls.deleted",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "ok": true,
+      "all": false,
+      "ids": [
+        900,
+        901
+      ]
+    },
+    "old": {
+      "ok": false,
+      "ids": [],
+      "err": "Android refused the deletion"
+    }
+  }
+}

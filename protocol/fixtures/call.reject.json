@@ -1,0 +1,9 @@
+{
+  "t": "call.reject",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "cid": "c1"
+    }
+  }
+}

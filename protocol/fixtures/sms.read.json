@@ -1,0 +1,10 @@
+{
+  "t": "sms.read",
+  "dir": "both",
+  "variants": {
+    "full": {
+      "thread": 7,
+      "upTo": 120
+    }
+  }
+}

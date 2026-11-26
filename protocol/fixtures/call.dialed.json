@@ -1,0 +1,13 @@
+{
+  "t": "call.dialed",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "ok": false,
+      "err": "no SIM"
+    },
+    "old": {
+      "ok": true
+    }
+  }
+}

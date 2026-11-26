@@ -1,0 +1,5 @@
+# JitPack builds only the JVM library (no Android SDK needed): com.github.amirwmr.tether:tether-core:<tag>
+jdk:
+  - openjdk17
+install:
+  - cd android && ./gradlew --console=plain -Ptether.libraryOnly=true :core:publishToMavenLocal

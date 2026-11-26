@@ -1,0 +1,56 @@
+{
+  "t": "net.state",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "data": true,
+      "dataSub": 2,
+      "hotspot": false,
+      "bt": true,
+      "tethered": [
+        "bt-pan"
+      ],
+      "vpn": true,
+      "airplane": false,
+      "can": {
+        "hotspot": true,
+        "bt": true
+      },
+      "rat": [
+        {
+          "slot": 0,
+          "mode": "4G"
+        },
+        {
+          "slot": 1,
+          "mode": "5G"
+        }
+      ],
+      "share": true,
+      "proxy": {
+        "port": 8899,
+        "addrs": [
+          {
+            "iface": "bt-pan",
+            "ip": "192.168.44.1",
+            "kind": "bt",
+            "pac": "http://192.168.44.1:8899/proxy.pac"
+          }
+        ]
+      }
+    },
+    "old": {
+      "data": true,
+      "hotspot": false,
+      "bt": false
+    },
+    "error": {
+      "err": "helper did not answer",
+      "share": false,
+      "proxy": {
+        "port": 8899,
+        "addrs": []
+      }
+    }
+  }
+}

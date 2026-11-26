@@ -1,0 +1,19 @@
+{
+  "t": "audio.start",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "codec": "opus",
+      "rate": 16000,
+      "ms": 20,
+      "up": true,
+      "bitrate": 32000
+    },
+    "old": {
+      "codec": "pcmu",
+      "rate": 8000,
+      "ms": 20,
+      "up": true
+    }
+  }
+}

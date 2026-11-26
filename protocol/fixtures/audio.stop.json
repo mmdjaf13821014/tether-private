@@ -1,0 +1,7 @@
+{
+  "t": "audio.stop",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {}
+  }
+}

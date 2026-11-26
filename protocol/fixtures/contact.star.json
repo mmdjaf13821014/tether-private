@@ -1,0 +1,10 @@
+{
+  "t": "contact.star",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "id": 42,
+      "on": true
+    }
+  }
+}

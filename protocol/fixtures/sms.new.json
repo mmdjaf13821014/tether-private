@@ -1,0 +1,29 @@
+{
+  "t": "sms.new",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "item": {
+        "id": 120,
+        "thread": 7,
+        "addr": "+10000000001",
+        "body": "Your code is 123456",
+        "date": 1763800000000,
+        "box": 1,
+        "read": false,
+        "sub": 2
+      }
+    },
+    "old": {
+      "item": {
+        "id": 120,
+        "thread": 7,
+        "addr": "+10000000001",
+        "body": "Your code is 123456",
+        "date": 1763800000000,
+        "box": 1,
+        "read": false
+      }
+    }
+  }
+}

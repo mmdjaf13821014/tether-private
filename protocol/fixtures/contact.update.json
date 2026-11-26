@@ -1,0 +1,47 @@
+{
+  "t": "contact.update",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "id": 42,
+      "name": "Test Person",
+      "phones": [
+        {
+          "n": "+10000000002",
+          "type": "work"
+        },
+        {
+          "n": "+10000000003",
+          "type": "other",
+          "label": "Satellite"
+        }
+      ],
+      "emails": [
+        "test@example.com"
+      ]
+    },
+    "clearLabel": {
+      "id": 42,
+      "name": "Test Person",
+      "phones": [
+        {
+          "n": "+10000000003",
+          "type": "home",
+          "label": ""
+        }
+      ],
+      "emails": []
+    },
+    "old": {
+      "id": 42,
+      "name": "Test Person",
+      "phones": [
+        {
+          "n": "+10000000003",
+          "type": "other"
+        }
+      ],
+      "emails": []
+    }
+  }
+}

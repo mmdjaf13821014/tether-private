@@ -1,0 +1,27 @@
+{
+  "t": "calls.batch",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "items": [
+        {
+          "id": 900,
+          "num": "+10000000005",
+          "date": 1763800000000,
+          "dur": 63,
+          "type": 2,
+          "name": "Test Person",
+          "sub": 3
+        },
+        {
+          "id": 901,
+          "num": "+10000000006",
+          "date": 1763800001000,
+          "dur": 0,
+          "type": 3
+        }
+      ],
+      "more": false
+    }
+  }
+}

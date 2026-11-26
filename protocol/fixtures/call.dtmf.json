@@ -1,0 +1,10 @@
+{
+  "t": "call.dtmf",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "cid": "c1",
+      "d": "5"
+    }
+  }
+}

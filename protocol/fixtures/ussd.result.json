@@ -1,0 +1,14 @@
+{
+  "t": "ussd.result",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "ok": true,
+      "text": "Balance: 10.00"
+    },
+    "old": {
+      "ok": false,
+      "err": "Not a carrier code (like *123#)"
+    }
+  }
+}

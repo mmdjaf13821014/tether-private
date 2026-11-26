@@ -1,0 +1,47 @@
+{
+  "t": "sms.batch",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "items": [
+        {
+          "id": 120,
+          "thread": 7,
+          "addr": "+10000000001",
+          "body": "Your code is 123456",
+          "date": 1763800000000,
+          "box": 1,
+          "read": false,
+          "sub": 2
+        },
+        {
+          "id": 120,
+          "thread": 7,
+          "addr": "+10000000001",
+          "body": "Your code is 123456",
+          "date": 1763800000000,
+          "box": 1,
+          "read": false
+        }
+      ],
+      "more": true
+    },
+    "unknown": {
+      "items": [
+        {
+          "id": 120,
+          "thread": 7,
+          "addr": "+10000000001",
+          "body": "Your code is 123456",
+          "date": 1763800000000,
+          "box": 1,
+          "read": false,
+          "sub": 2,
+          "future": 1
+        }
+      ],
+      "more": false,
+      "page": 2
+    }
+  }
+}

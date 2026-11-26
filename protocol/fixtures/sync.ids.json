@@ -1,0 +1,29 @@
+{
+  "t": "sync.ids",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "sms": [
+        [
+          1,
+          118
+        ],
+        [
+          120,
+          120
+        ]
+      ],
+      "calls": [
+        [
+          900,
+          901
+        ]
+      ],
+      "more": true
+    },
+    "old": {
+      "sms": [],
+      "calls": []
+    }
+  }
+}

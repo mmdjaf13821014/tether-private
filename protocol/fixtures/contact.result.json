@@ -1,0 +1,14 @@
+{
+  "t": "contact.result",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "ok": true,
+      "id": 42
+    },
+    "old": {
+      "ok": false,
+      "err": "Android refused the change"
+    }
+  }
+}

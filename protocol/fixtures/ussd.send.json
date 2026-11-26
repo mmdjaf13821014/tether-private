@@ -1,0 +1,13 @@
+{
+  "t": "ussd.send",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "code": "*123#",
+      "sub": 3
+    },
+    "old": {
+      "code": "*123#"
+    }
+  }
+}

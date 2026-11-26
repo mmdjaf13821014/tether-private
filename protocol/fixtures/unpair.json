@@ -1,0 +1,7 @@
+{
+  "t": "unpair",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {}
+  }
+}

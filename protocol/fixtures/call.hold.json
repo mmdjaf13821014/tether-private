@@ -1,0 +1,10 @@
+{
+  "t": "call.hold",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "cid": "c1",
+      "on": true
+    }
+  }
+}

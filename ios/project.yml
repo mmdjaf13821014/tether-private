@@ -1,0 +1,81 @@
+# XcodeGen spec. Generate the project with:  cd ios && xcodegen generate
+name: Tether
+options:
+  bundleIdPrefix: app.tether
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    # Written by tools/release.sh from VERSION (MARKETING_VERSION without a pre-release suffix, as App Store rules
+    # want; CURRENT_PROJECT_VERSION = the Android versionCode). The release workflow checks they agree.
+    MARKETING_VERSION: "1.2.5"
+    CURRENT_PROJECT_VERSION: "1020599"
+    # Team, bundle id and display name come from Config/Tether.xcconfig + Config/Local.xcconfig (docs/BUILD.md).
+    CODE_SIGN_STYLE: Automatic
+packages:
+  TetherCore:
+    path: TetherCore
+  Perception:
+    url: https://github.com/pointfreeco/swift-perception
+    from: 2.0.9
+targets:
+  Tether:
+    type: application
+    platform: iOS
+    sources:
+      - path: Tether
+    dependencies:
+      - package: TetherCore
+        product: TetherCore
+      - package: Perception
+        product: Perception
+    configFiles:
+      Debug: Config/Tether.xcconfig
+      Release: Config/Tether.xcconfig
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        INFOPLIST_FILE: Tether/Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        SUPPORTS_MACCATALYST: NO
+        # Paid-team entitlements: Communication Notifications (sender's picture in notifications) and Default Calling
+        # App (com.apple.developer.calling-app, iOS 18.2+: tel: links open this app). tools/reinstall-ios.sh first builds with
+        # TETHER_ENTITLEMENTS=Tether/Resources/Tether.entitlements TETHER_COMM_NOTIFICATIONS=YES and falls back to
+        # these defaults (no entitlement) when the signing service refuses it.
+        TETHER_ENTITLEMENTS: ""
+        TETHER_COMM_NOTIFICATIONS: "NO"
+        CODE_SIGN_ENTITLEMENTS: $(TETHER_ENTITLEMENTS)
+  TetherTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: TetherTests
+    dependencies:
+      - target: Tether
+      - package: TetherCore
+        product: TetherCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.tether.tests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Tether.app/Tether
+        BUNDLE_LOADER: $(TEST_HOST)
+        CODE_SIGNING_ALLOWED: NO
+schemes:
+  Tether:
+    build:
+      targets:
+        Tether: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - TetherTests
+      # The protocol / crypto / framing tests live in the TetherCore package:
+      #   cd ios/TetherCore && ./test.sh   (or open Package.swift in Xcode and press ⌘U)

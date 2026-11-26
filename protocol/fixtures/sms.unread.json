@@ -1,0 +1,18 @@
+{
+  "t": "sms.unread",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "ids": [
+        118,
+        120
+      ],
+      "all": true
+    },
+    "old": {
+      "ids": [
+        120
+      ]
+    }
+  }
+}

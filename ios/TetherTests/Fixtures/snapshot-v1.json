@@ -1,0 +1,37 @@
+{
+  "sms": [
+    {"id": 101, "thread": 7, "addr": "+10000000001", "body": "Test text one", "date": 1763800000000, "box": 1, "read": false, "sub": 3},
+    {"id": 102, "thread": 7, "addr": "+10000000001", "body": "Test reply", "date": 1763800060000, "box": 2, "read": true, "sub": 3},
+    {"id": 103, "thread": 8, "addr": "+10000000002", "body": "Second thread", "date": 1763800120000, "box": 1, "read": true},
+    {"id": -1763800180000, "thread": 8, "addr": "+10000000002", "body": "Still sending", "date": 1763800180000, "box": 4, "read": true, "sub": 2}
+  ],
+  "contacts": [
+    {"id": 11, "name": "Test Person", "phones": [{"n": "+10000000001", "type": "mobile"}], "emails": ["test@example.com"], "starred": true},
+    {"id": 12, "name": "Other Person", "phones": [{"n": "+10000000002", "type": "work", "label": "Desk"}], "emails": [], "photo": "AAAA", "starred": false}
+  ],
+  "recents": [
+    {"id": 201, "num": "+10000000001", "name": "Test Person", "date": 1763800200000, "dur": 0, "type": 3, "sub": 3},
+    {"id": 200, "num": "+10000000003", "date": 1763800100000, "dur": 42, "type": 2}
+  ],
+  "contactsVersion": "v-test-1",
+  "readUpTo": [7, 101, 8, 103],
+  "drafts": {"000000002": "draft text"},
+  "threadSim": {"000000001": 2},
+  "lastStatus": {
+    "device": "Test Android", "battery": 77, "charging": true,
+    "sims": [
+      {"slot": 0, "sub": 3, "name": "Line A", "carrier": "Carrier A", "signal": 4, "net": "LTE", "service": "in", "country": "us"},
+      {"slot": 1, "sub": 2, "name": "", "carrier": "Carrier B", "signal": 1, "roaming": false}
+    ],
+    "defaultSub": 3, "dialer": true,
+    "helper": {"state": "running", "method": "intercept", "up": true, "down": true},
+    "wifi": true, "adbWifi": true,
+    "clients": [{"name": "iPhone", "kind": "iphone", "self": true, "audio": false}],
+    "tools": {"ussd": true, "find": true, "ringer": false},
+    "ringer": "normal", "dnd": false
+  },
+  "lists": {"blocked": ["+10000000009"], "muted": [8], "system": true},
+  "smsSyncedUpTo": 103,
+  "outbox": [{"to": "+10000000002", "body": "Still sending", "sub": 2, "placeholder": -1763800180000}],
+  "recentsSeenUpTo": 200
+}

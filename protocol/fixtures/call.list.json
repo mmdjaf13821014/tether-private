@@ -1,0 +1,33 @@
+{
+  "t": "call.list",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "calls": [
+        {
+          "cid": "c1",
+          "num": "+10000000007",
+          "state": "active",
+          "dir": "in",
+          "hold": true,
+          "name": "Test Person",
+          "sub": 2,
+          "since": 1763800000000,
+          "elsewhere": true,
+          "where": "Test iPad"
+        },
+        {
+          "cid": "c3",
+          "num": "+10000000009",
+          "state": "ended",
+          "dir": "out",
+          "hold": false,
+          "cause": "remote"
+        }
+      ]
+    },
+    "old": {
+      "calls": []
+    }
+  }
+}

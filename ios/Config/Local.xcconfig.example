@@ -1,0 +1,4 @@
+// Copy to Local.xcconfig (same folder; git-ignored) and fill in your own values, then run `xcodegen generate`.
+TETHER_TEAM_ID = ABCDE12345
+TETHER_BUNDLE_ID = com.yourname.tether
+TETHER_DISPLAY_NAME = Cellular

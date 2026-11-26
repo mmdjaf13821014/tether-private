@@ -1,0 +1,15 @@
+{
+  "t": "ringer.result",
+  "dir": "phone-to-client",
+  "variants": {
+    "full": {
+      "ok": false,
+      "mode": "normal",
+      "err": "Do Not Disturb access missing"
+    },
+    "old": {
+      "ok": true,
+      "mode": "vibrate"
+    }
+  }
+}

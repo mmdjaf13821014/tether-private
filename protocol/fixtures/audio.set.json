@@ -1,0 +1,18 @@
+{
+  "t": "audio.set",
+  "dir": "client-to-phone",
+  "variants": {
+    "full": {
+      "micMute": true
+    },
+    "off": {
+      "micMute": false
+    },
+    "mic": {
+      "mic": "auto"
+    },
+    "mic-open": {
+      "mic": "open"
+    }
+  }
+}

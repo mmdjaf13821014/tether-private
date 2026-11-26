@@ -1,0 +1,9 @@
+{
+  "t": "x.org.example.unknown",
+  "dir": "both",
+  "variants": {
+    "request": {
+      "q": 1
+    }
+  }
+}
