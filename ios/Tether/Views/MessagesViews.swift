@@ -414,7 +414,7 @@ private struct ThreadProfileHeader: View {
                 Spacer().frame(height: avatarSize / 2)
                 Rectangle()
                     .fill(.ultraThinMaterial)
-                    .overlay {
+                    .mask {
                         LinearGradient(
                             stops: [
                                 .init(color: .clear, location: 0),
@@ -424,7 +424,6 @@ private struct ThreadProfileHeader: View {
                             startPoint: .top,
                             endPoint: .bottom
                         )
-                        .blendMode(.destinationIn)
                     }
             }
             VStack(spacing: 7) {
