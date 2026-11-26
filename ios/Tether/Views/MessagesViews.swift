@@ -424,9 +424,9 @@ private struct ThreadProfileHeader: View {
                 .tetherLiquidGlass(cornerRadius: 20)
                 .fixedSize(horizontal: true, vertical: false)
         }
-        .padding(.top, -13)
+        .padding(.top, -25)
         .frame(maxWidth: .infinity, alignment: .top)
-        .frame(height: 92, alignment: .top)
+        .frame(height: 80, alignment: .top)
     }
 }
 /// "Today 13:20" / "Yesterday 09:05" / "Mon 13:20" / "12 Nov 2026 at 13:20", as Messages writes it.
