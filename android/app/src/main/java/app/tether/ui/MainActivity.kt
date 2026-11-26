@@ -17,6 +17,7 @@ import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
 import android.provider.CallLog
+import android.provider.ContactsContract
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
@@ -49,6 +50,10 @@ import java.util.Locale
 class MainActivity : Activity() {
     private lateinit var app: TetherApp
     private lateinit var root: LinearLayout
+    private lateinit var shell: LinearLayout
+    private lateinit var tabs: LinearLayout
+    private var selectedTab = "keypad"
+    private var dialNumber = ""
     private val main = Handler(Looper.getMainLooper())
     private var qrUntil = 0L
     private var qrBitmap: Bitmap? = null
@@ -68,8 +73,18 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         app = application as TetherApp
-        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(24), dp(16), dp(24)) }
-        setContentView(ScrollView(this).apply { addView(root); setBackgroundColor(color(R.color.background)) })
+        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(20), dp(16), dp(24)) }
+        shell = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(color(R.color.background)) }
+        val scroll = ScrollView(this).apply { addView(root); setBackgroundColor(color(R.color.background)) }
+        shell.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        tabs = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(dp(4), dp(7), dp(4), dp(7))
+            background = GradientDrawable().apply { setColor(color(R.color.surface)); setStroke(dp(1), color(R.color.muted)); cornerRadius = dp(18).toFloat() }
+        }
+        shell.addView(tabs, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(10), dp(4), dp(10), dp(10)) })
+        setContentView(shell)
         if (missingPerms().isEmpty()) LinkService.start(this) else requestPermissions(missingPerms(), 1)
     }
 
@@ -97,53 +112,143 @@ class MainActivity : Activity() {
 
     private fun missingPerms() = perms.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }.toTypedArray()
 
+
+    private fun renderTabs() {
+        tabs.removeAllViews()
+        val entries = listOf("keypad" to "کی‌پد", "contacts" to "مخاطبین", "recent" to "Recent", "settings" to "تنظیمات")
+        for ((key, title) in entries) {
+            val b = TextView(this).apply {
+                text = title
+                gravity = Gravity.CENTER
+                textSize = 12f
+                setTextColor(color(if (selectedTab == key) R.color.accent else R.color.text))
+                setTypeface(typeface, if (selectedTab == key) Typeface.BOLD else Typeface.NORMAL)
+                setPadding(dp(3), dp(9), dp(3), dp(9))
+                layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+                setOnClickListener { selectedTab = key; render() }
+            }
+            tabs.addView(b)
+        }
+    }
+
+    private fun renderKeypad() {
+        root.addView(TextView(this).apply { text = "شماره‌گیری"; textSize = 26f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
+        val display = TextView(this).apply {
+            text = dialNumber.ifEmpty { "شماره را وارد کنید" }; textSize = 26f; gravity = Gravity.CENTER
+            setTextColor(color(if (dialNumber.isEmpty()) R.color.muted else R.color.text))
+            setPadding(0, dp(28), 0, dp(22))
+            setOnLongClickListener { dialNumber = ""; render(); true }
+        }
+        root.addView(display)
+        val grid = listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf("*", "0", "#"))
+        for (line in grid) {
+            val row = LinearLayout(this).apply { gravity = Gravity.CENTER; orientation = LinearLayout.HORIZONTAL }
+            for (digit in line) {
+                val cell = TextView(this).apply {
+                    text = digit; textSize = 27f; gravity = Gravity.CENTER; setTextColor(color(R.color.text))
+                    background = GradientDrawable().apply { setColor(color(R.color.surface)); shape = GradientDrawable.OVAL }
+                    layoutParams = LinearLayout.LayoutParams(dp(68), dp(68)).apply { setMargins(dp(12), dp(5), dp(12), dp(5)) }
+                    setOnClickListener { dialNumber += digit; display.text = dialNumber; display.setTextColor(color(R.color.text)) }
+                }
+                row.addView(cell)
+            }
+            root.addView(row)
+        }
+        val actions = LinearLayout(this).apply { gravity = Gravity.CENTER; orientation = LinearLayout.HORIZONTAL }
+        actions.addView(button("تماس") {
+            if (dialNumber.isNotBlank()) {
+                try { startActivity(Intent(Intent.ACTION_CALL, Uri.fromParts("tel", dialNumber, null))) }
+                catch (_: Throwable) { Toast.makeText(this, "تماس برقرار نشد", Toast.LENGTH_LONG).show() }
+            }
+        })
+        actions.addView(button("⌫", secondary = true) {
+            if (dialNumber.isNotEmpty()) dialNumber = dialNumber.dropLast(1)
+            display.text = dialNumber.ifEmpty { "شماره را وارد کنید" }
+        })
+        root.addView(actions)
+    }
+
+    private fun renderContacts() {
+        root.addView(TextView(this).apply { text = "مخاطبین"; textSize = 26f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
+        if (checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            root.addView(label("برای نمایش مخاطبین، دسترسی مخاطبین را فعال کن.", R.color.warn))
+            root.addView(button("اعطای دسترسی") { requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 3) })
+            return
+        }
+        try {
+            val uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+            contentResolver.query(uri, arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER), null, null,
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " COLLATE LOCALIZED ASC")?.use { cursor ->
+                val seen = HashSet<String>()
+                while (cursor.moveToNext()) {
+                    val name = cursor.getString(0).orEmpty()
+                    val number = cursor.getString(1).orEmpty()
+                    if (number.isBlank() || !seen.add(name + "|" + number)) continue
+                    val row = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL; setPadding(0, dp(10), 0, dp(10))
+                        setOnClickListener { dialNumber = number; selectedTab = "keypad"; render() }
+                    }
+                    row.addView(label(name.ifBlank { number }, R.color.text, 16f))
+                    row.addView(label(number, R.color.muted, 13f))
+                    root.addView(row)
+                }
+            }
+        } catch (_: SecurityException) { root.addView(label("دسترسی به مخاطبین موجود نیست.", R.color.warn)) }
+    }
+
+    private fun renderRecent() {
+        root.addView(TextView(this).apply { text = "تماس‌های اخیر"; textSize = 26f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
+        if (checkSelfPermission(Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+            root.addView(label("برای نمایش سابقه تماس، دسترسی تماس‌ها را فعال کن.", R.color.warn))
+            root.addView(button("اعطای دسترسی") { requestPermissions(arrayOf(Manifest.permission.READ_CALL_LOG), 4) })
+            return
+        }
+        try {
+            val projection = arrayOf(CallLog.Calls._ID, CallLog.Calls.NUMBER, CallLog.Calls.CACHED_NAME, CallLog.Calls.TYPE, CallLog.Calls.DATE)
+            contentResolver.query(CallLog.Calls.CONTENT_URI, projection, null, null, CallLog.Calls.DATE + " DESC")?.use { cursor ->
+                var shown = 0
+                val fmt = SimpleDateFormat("MM/dd  HH:mm", Locale.getDefault())
+                while (cursor.moveToNext() && shown < 100) {
+                    val number = cursor.getString(1).orEmpty()
+                    if (number.isBlank()) continue
+                    val name = cursor.getString(2)?.takeIf { it.isNotBlank() } ?: number
+                    val kind = when (cursor.getInt(3)) {
+                        CallLog.Calls.INCOMING_TYPE -> "دریافتی"
+                        CallLog.Calls.OUTGOING_TYPE -> "خروجی"
+                        CallLog.Calls.MISSED_TYPE -> "ازدست‌رفته"
+                        CallLog.Calls.REJECTED_TYPE -> "ردشده"
+                        else -> "تماس"
+                    }
+                    val date = fmt.format(Date(cursor.getLong(4)))
+                    val row = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL; setPadding(0, dp(9), 0, dp(9))
+                        setOnClickListener { dialNumber = number; selectedTab = "keypad"; render() }
+                    }
+                    row.addView(label(name, R.color.text, 16f))
+                    row.addView(label("$kind  ·  $date  ·  $number", R.color.muted, 12f))
+                    root.addView(row)
+                    shown++
+                }
+                if (shown == 0) root.addView(label("هنوز تماسی ثبت نشده است.", R.color.muted))
+            } ?: root.addView(label("سابقه تماس در دسترس نیست.", R.color.warn))
+        } catch (_: SecurityException) { root.addView(label("دسترسی به سابقه تماس داده نشده است.", R.color.warn)) }
+    }
+
     private fun render() {
         root.removeAllViews()
+        renderTabs()
+        if (selectedTab != "settings") {
+            when (selectedTab) {
+                "keypad" -> renderKeypad()
+                "contacts" -> renderContacts()
+                "recent" -> renderRecent()
+            }
+            return
+        }
         root.addView(TextView(this).apply {
             text = getString(R.string.app_name); textSize = 28f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text))
             setPadding(dp(4), 0, 0, dp(16))
         })
-
-        // Recent calls: available inside Tether without changing the default-dialer role.
-        val recent = card("تماس‌های اخیر")
-        if (checkSelfPermission(Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
-            try {
-                val projection = arrayOf(CallLog.Calls._ID, CallLog.Calls.NUMBER, CallLog.Calls.CACHED_NAME, CallLog.Calls.TYPE, CallLog.Calls.DATE)
-                contentResolver.query(CallLog.Calls.CONTENT_URI, projection, null, null, "${CallLog.Calls.DATE} DESC")?.use { cursor ->
-                    var shown = 0
-                    val dateFormat = SimpleDateFormat("MM/dd  HH:mm", Locale.getDefault())
-                    while (cursor.moveToNext() && shown < 20) {
-                        val number = cursor.getString(1).orEmpty()
-                        if (number.isBlank()) continue
-                        val name = cursor.getString(2)?.takeIf { it.isNotBlank() } ?: number
-                        val kind = when (cursor.getInt(3)) {
-                            CallLog.Calls.INCOMING_TYPE -> "دریافتی"
-                            CallLog.Calls.OUTGOING_TYPE -> "خروجی"
-                            CallLog.Calls.MISSED_TYPE -> "پاسخ‌داده‌نشده"
-                            CallLog.Calls.REJECTED_TYPE -> "ردشده"
-                            CallLog.Calls.BLOCKED_TYPE -> "مسدودشده"
-                            else -> "تماس"
-                        }
-                        val date = cursor.getLong(4)
-                        val item = LinearLayout(this).apply {
-                            orientation = LinearLayout.VERTICAL
-                            setPadding(0, dp(8), 0, dp(8))
-                            isClickable = true
-                            isFocusable = true
-                            setOnClickListener {
-                                try { startActivity(Intent(Intent.ACTION_CALL, Uri.fromParts("tel", number, null))) }
-                                catch (t: Throwable) { Toast.makeText(this@MainActivity, "تماس برقرار نشد: " + (t.message ?: "خطا"), Toast.LENGTH_LONG).show() }
-                            }
-                        }
-                        item.addView(label(name, R.color.text, 16f))
-                        item.addView(label(kind + "  ·  " + dateFormat.format(Date(date)) + "  ·  " + number, R.color.muted, 12f))
-                        recent.addView(item)
-                        shown++
-                    }
-                    if (shown == 0) recent.addView(label("هنوز تماسی ثبت نشده است.", R.color.muted, 13f))
-                } ?: recent.addView(label("سابقه تماس در دسترس نیست.", R.color.warn, 13f))
-            } catch (_: SecurityException) { recent.addView(label("دسترسی به سابقه تماس داده نشده است.", R.color.warn, 13f)) }
-        } else { recent.addView(label("برای دیدن تماس‌های اخیر، مجوز سابقه تماس را فعال کن.", R.color.warn, 13f)) }
 
         // Link
         val link = card(getString(R.string.section_link))
