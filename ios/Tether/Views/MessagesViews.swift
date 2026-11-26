@@ -411,7 +411,7 @@ private struct ThreadProfileHeader: View {
     var body: some View {
         VStack(spacing: 0) {
             Avatar(name: isKnown ? name : number,
-                   photo: isKnown ? photo : nil,
+                   photo: photo,
                    size: avatarSize)
 
             Text(isKnown ? name : number)

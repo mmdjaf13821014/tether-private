@@ -25,7 +25,7 @@ struct ContactsView: View {
                                 ContactDetailView(contact: c)
                             } label: {
                                 HStack(spacing: 12) {
-                                    Avatar(name: c.name, photo: c.photo, size: 36)
+                                    Avatar(name: c.name, photo: model.photo(for: c), size: 36)
                                     Text(c.name).font(.body).lineLimit(1)
                                     if c.starred {
                                         Image(systemName: "star.fill")
@@ -95,7 +95,7 @@ struct FavouriteRow: View {
 
     @ViewBuilder private var bodyContent: some View {
         HStack(spacing: 12) {
-            Avatar(name: contact.name, photo: contact.photo, size: 36)
+            Avatar(name: contact.name, photo: model.photo(for: contact), size: 36)
             VStack(alignment: .leading, spacing: 1) {
                 Text(contact.name)
                 if let p = contact.phones.first {
@@ -132,7 +132,7 @@ struct ContactDetailView: View {
         List {
             Section {
                 VStack(spacing: 10) {
-                    Avatar(name: contact.name, photo: contact.photo, size: 96)
+                    Avatar(name: contact.name, photo: model.photo(for: contact), size: 96)
                     Text(contact.name).font(.title2.weight(.semibold))
                 }
                 .frame(maxWidth: .infinity)
@@ -282,7 +282,7 @@ struct EditContactView: View {
         NavigationStack {
             Form {
                 Section {
-                    HStack { Spacer(); Avatar(name: name.isEmpty ? contact.name : name, photo: contact.photo, size: 80); Spacer() }
+                    HStack { Spacer(); Avatar(name: name.isEmpty ? contact.name : name, photo: model.photo(for: contact), size: 80); Spacer() }
                         .listRowBackground(Color.clear)
                     TextField("Name", text: $name)
                 }
