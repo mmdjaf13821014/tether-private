@@ -415,7 +415,7 @@ class MainActivity : Activity() {
                         }
                     }
                     details.addView(label(displayName, R.color.text, 16f).apply {
-                        setTypeface(typeface, Typeface.MEDIUM)
+                        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
                     })
                     details.addView(label(number, R.color.muted, 13f))
                     row.addView(details)
@@ -471,7 +471,7 @@ class MainActivity : Activity() {
                         orientation = LinearLayout.VERTICAL
                         layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) }
                     }
-                    details.addView(label(name, R.color.text, 16f).apply { setTypeface(typeface, Typeface.MEDIUM) })
+                    details.addView(label(name, R.color.text, 16f).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
                     val metaColor = if (type == CallLog.Calls.MISSED_TYPE) R.color.bad else R.color.muted
                     details.addView(label("$kind  ·  $date", metaColor, 12f))
                     row.addView(details)
