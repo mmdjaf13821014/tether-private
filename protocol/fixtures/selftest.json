@@ -1,7 +1,0 @@
-{
-  "t": "selftest",
-  "dir": "client-to-phone",
-  "variants": {
-    "full": {}
-  }
-}

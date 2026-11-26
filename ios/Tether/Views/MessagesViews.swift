@@ -407,72 +407,37 @@ private struct ThreadProfileHeader: View {
     let isKnown: Bool
     private let avatarSize: CGFloat = 72
 
-    /// Compact iMessage-style identity: one portrait and one glass name/number capsule.
+    /// Floating iMessage-style identity: avatar above a compact name/number capsule.
     var body: some View {
-        ZStack(alignment: .top) {
-            VStack(spacing: 0) {
-                Spacer().frame(height: avatarSize / 2)
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .mask {
-                        LinearGradient(
-                            stops: [
-                                .init(color: .clear, location: 0),
-                                .init(color: .black.opacity(0.72), location: 0.28),
-                                .init(color: .black, location: 1)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+        VStack(spacing: 12) {
+            Group {
+                if !isKnown {
+                    ZStack {
+                        Circle().fill(Color(uiColor: .systemBlue))
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 34, weight: .regular))
+                            .foregroundStyle(.white)
                     }
-            }
-            VStack(spacing: 7) {
-                Group {
-                    if !isKnown {
-                        ZStack {
-                            Circle().fill(Color(uiColor: .systemGray3))
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 34, weight: .regular))
-                                .foregroundStyle(.white.opacity(0.96))
-                        }
-                        .frame(width: avatarSize, height: avatarSize)
-                    } else {
-                        Avatar(name: name, photo: photo, size: avatarSize)
-                    }
+                    .frame(width: avatarSize, height: avatarSize)
+                } else {
+                    Avatar(name: name, photo: photo, size: avatarSize)
                 }
-                .clipShape(Circle())
-                Text(isKnown ? name : number)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .padding(.horizontal, 13)
-                    .padding(.vertical, 6)
-                    .tetherLiquidGlass(cornerRadius: 18)
-                    .fixedSize(horizontal: true, vertical: false)
             }
-            .padding(.top, 2)
+            .clipShape(Circle())
+
+            Text(isKnown ? name : number)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, 13)
+                .padding(.vertical, 6)
+                .tetherLiquidGlass(cornerRadius: 18)
+                .fixedSize(horizontal: true, vertical: false)
         }
+        .padding(.top, 2)
         .frame(maxWidth: .infinity)
-        .frame(height: 112)
-        .background {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .mask {
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0),
-                            .init(color: .black.opacity(0.18), location: 0.32),
-                            .init(color: .black, location: 0.58)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-        }
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5)
-        }
+        .frame(height: 128)
     }
 }
 

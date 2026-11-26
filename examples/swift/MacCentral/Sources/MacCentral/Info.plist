@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleIdentifier</key><string>app.tether.example.mac-central</string>
-    <key>CFBundleName</key><string>MacCentral</string>
-    <key>NSBluetoothAlwaysUsageDescription</key><string>Connects to your Tether phone over Bluetooth.</string>
-</dict>
-</plist>

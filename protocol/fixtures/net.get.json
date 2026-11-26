@@ -1,7 +1,0 @@
-{
-  "t": "net.get",
-  "dir": "client-to-phone",
-  "variants": {
-    "full": {}
-  }
-}
