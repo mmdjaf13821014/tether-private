@@ -16,6 +16,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
+import android.provider.CallLog
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
@@ -41,6 +42,9 @@ import app.tether.report.ReportUi
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : Activity() {
     private lateinit var app: TetherApp
@@ -99,6 +103,47 @@ class MainActivity : Activity() {
             text = getString(R.string.app_name); textSize = 28f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text))
             setPadding(dp(4), 0, 0, dp(16))
         })
+
+        // Recent calls: available inside Tether without changing the default-dialer role.
+        val recent = card("تماس‌های اخیر")
+        if (checkSelfPermission(Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
+            try {
+                val projection = arrayOf(CallLog.Calls._ID, CallLog.Calls.NUMBER, CallLog.Calls.CACHED_NAME, CallLog.Calls.TYPE, CallLog.Calls.DATE)
+                contentResolver.query(CallLog.Calls.CONTENT_URI, projection, null, null, "${CallLog.Calls.DATE} DESC")?.use { cursor ->
+                    var shown = 0
+                    val dateFormat = SimpleDateFormat("MM/dd  HH:mm", Locale.getDefault())
+                    while (cursor.moveToNext() && shown < 20) {
+                        val number = cursor.getString(1).orEmpty()
+                        if (number.isBlank()) continue
+                        val name = cursor.getString(2)?.takeIf { it.isNotBlank() } ?: number
+                        val kind = when (cursor.getInt(3)) {
+                            CallLog.Calls.INCOMING_TYPE -> "دریافتی"
+                            CallLog.Calls.OUTGOING_TYPE -> "خروجی"
+                            CallLog.Calls.MISSED_TYPE -> "پاسخ‌داده‌نشده"
+                            CallLog.Calls.REJECTED_TYPE -> "ردشده"
+                            CallLog.Calls.BLOCKED_TYPE -> "مسدودشده"
+                            else -> "تماس"
+                        }
+                        val date = cursor.getLong(4)
+                        val item = LinearLayout(this).apply {
+                            orientation = LinearLayout.VERTICAL
+                            setPadding(0, dp(8), 0, dp(8))
+                            isClickable = true
+                            isFocusable = true
+                            setOnClickListener {
+                                try { startActivity(Intent(Intent.ACTION_CALL, Uri.fromParts("tel", number, null))) }
+                                catch (t: Throwable) { Toast.makeText(this@MainActivity, "تماس برقرار نشد: " + (t.message ?: "خطا"), Toast.LENGTH_LONG).show() }
+                            }
+                        }
+                        item.addView(label(name, R.color.text, 16f))
+                        item.addView(label(kind + "  ·  " + dateFormat.format(Date(date)) + "  ·  " + number, R.color.muted, 12f))
+                        recent.addView(item)
+                        shown++
+                    }
+                    if (shown == 0) recent.addView(label("هنوز تماسی ثبت نشده است.", R.color.muted, 13f))
+                } ?: recent.addView(label("سابقه تماس در دسترس نیست.", R.color.warn, 13f))
+            } catch (_: SecurityException) { recent.addView(label("دسترسی به سابقه تماس داده نشده است.", R.color.warn, 13f)) }
+        } else { recent.addView(label("برای دیدن تماس‌های اخیر، مجوز سابقه تماس را فعال کن.", R.color.warn, 13f)) }
 
         // Link
         val link = card(getString(R.string.section_link))
