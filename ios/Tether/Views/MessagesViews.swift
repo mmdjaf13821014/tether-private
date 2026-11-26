@@ -405,28 +405,28 @@ private struct ThreadProfileHeader: View {
     let number: String
     let photo: String?
     let isKnown: Bool
-    private let avatarSize: CGFloat = 80
+    private let avatarSize: CGFloat = 72
 
-    /// Compact iMessage-style identity: a slightly larger portrait with its glass identity capsule close beneath it.
+    /// Keep the identity directly beneath the navigation bar, with the name capsule close to the portrait.
     var body: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 1) {
             Avatar(name: isKnown ? name : number,
                    photo: isKnown ? photo : nil,
                    size: avatarSize)
 
             Text(isKnown ? name : number)
-                .font(.body.weight(.semibold))
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.vertical, 6)
                 .tetherLiquidGlass(cornerRadius: 20)
                 .fixedSize(horizontal: true, vertical: false)
         }
-        .padding(.top, 2)
-        .frame(maxWidth: .infinity)
-        .frame(height: 132)
+        .padding(.top, -7)
+        .frame(maxWidth: .infinity, alignment: .top)
+        .frame(height: 104, alignment: .top)
     }
 }
 /// "Today 13:20" / "Yesterday 09:05" / "Mon 13:20" / "12 Nov 2026 at 13:20", as Messages writes it.
