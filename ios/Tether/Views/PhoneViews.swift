@@ -176,7 +176,7 @@ struct KeypadView: View {
             SimPicker(sub: $sub)
             VStack(spacing: 14) {
                 ForEach(keys.indices, id: \.self) { r in
-                    HStack(spacing: 26) {
+                    HStack(spacing: 24) {
                         ForEach(keys[r], id: \.0) { k in
                             Button { if k.0 == "0" && longPressedZero { longPressedZero = false } else { longPressedZero = false; number.append(k.0) } } label: {
                                 VStack(spacing: 0) {
@@ -189,7 +189,7 @@ struct KeypadView: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
-                                .frame(width: 78, height: 78, alignment: .center)
+                                 .frame(width: 76, height: 76, alignment: .center)
                                 .contentShape(Circle())
                                 .tetherLiquidGlassCircle()
                             }
@@ -204,20 +204,30 @@ struct KeypadView: View {
             .padding(.vertical, 8)
             .padding(.horizontal, 8)
             .environment(\.layoutDirection, .leftToRight)
-            HStack(spacing: 26) {
-                Color.clear.frame(width: 78, height: 78)
+            HStack(spacing: 24) {
+                Color.clear.frame(width: 76, height: 76)
                 Button { model.dial(number, sub: sub) } label: {
                     Image(systemName: "phone.fill")
                         .font(.system(size: 30, weight: .semibold))
                         .foregroundStyle(.white)
                         .accessibilityLabel(Text("Call"))
-                        .frame(width: 78, height: 78)
+                        .frame(width: 76, height: 76)
                         .tetherLiquidGlassCircle(tint: .green)
                 }
                 .disabled(number.isEmpty || !model.linkState.isConnected)
-                Button { if !number.isEmpty { number.removeLast() } } label: {
-                    Image(systemName: "delete.left").font(.system(size: 24)).frame(width: 78, height: 78).accessibilityLabel(Text("Delete"))
+                Button {
+                    guard !number.isEmpty else { return }
+                    number.removeLast()
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                } label: {
+                    Image(systemName: "delete.left")
+                        .font(.system(size: 23, weight: .medium))
+                        .frame(width: 76, height: 76)
+                        .contentShape(Circle())
+                        .tetherLiquidGlassCircle()
+                        .accessibilityLabel(Text("Delete"))
                 }
+                .buttonStyle(.plain)
                 .opacity(number.isEmpty ? 0 : 1)
             }
             .environment(\.layoutDirection, .leftToRight)

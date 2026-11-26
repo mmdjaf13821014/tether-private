@@ -23,16 +23,27 @@ struct ContactsView: View {
                         NavigationLink {
                             ContactDetailView(contact: c)
                         } label: {
-                            HStack(spacing: 12) {
-                                Avatar(name: c.name, photo: c.photo, size: 36)
+                            HStack(spacing: 13) {
+                                Avatar(name: c.name, photo: c.photo, size: 40)
                                 Text(c.name)
-                                if c.starred { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.yellow) }
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                    .lineLimit(1)
+                                if c.starred {
+                                    Image(systemName: "star.fill")
+                                        .font(.caption2)
+                                        .foregroundStyle(.yellow)
+                                }
+                                Spacer(minLength: 0)
                             }
+                            .padding(.vertical, 3)
+                            .contentShape(Rectangle())
                         }
                     }
                 }
             }
             .listStyle(.plain)
+            .alignmentGuide(.listRowSeparatorLeading) { _ in 66 }
             .overlay {
                 if model.data.contacts.isEmpty { EmptyStateView("No contacts", systemImage: "person.crop.circle") }
             }

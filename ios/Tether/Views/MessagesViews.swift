@@ -103,6 +103,7 @@ struct MessagesView: View {
             .refreshable { model.requestSync() }
             .navigationTitle("Messages")
             .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar(.visible, for: .tabBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Menu {
@@ -162,31 +163,42 @@ struct ConversationRow: View {
     var body: some View { WithPerceptionTracking { bodyContent } }
 
     @ViewBuilder private var bodyContent: some View {
-        HStack(spacing: 10) {
-            // Unread marker, where Messages puts it.
-            Circle().fill(conversation.unread > 0 ? Color.blue : Color.clear).frame(width: 10, height: 10)
-            Avatar(name: model.displayName(conversation.address), photo: model.photo(for: conversation.address), size: 48)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(model.displayName(conversation.address)).font(.body.weight(.semibold)).lineLimit(1)
+        HStack(spacing: 9) {
+            Circle()
+                .fill(conversation.unread > 0 ? Color.blue : Color.clear)
+                .frame(width: 7, height: 7)
+            Avatar(name: model.displayName(conversation.address),
+                   photo: model.photo(for: conversation.address), size: 44)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    Text(model.displayName(conversation.address))
+                        .font(.body.weight(.semibold))
+                        .lineLimit(1)
                     if model.isMuted(conversation.thread) {
-                        Image(systemName: "moon.fill").font(.caption).foregroundStyle(.secondary)
+                        Image(systemName: "moon.fill").font(.caption2).foregroundStyle(.secondary)
                             .accessibilityLabel(Text("Alerts hidden"))
                     }
                     if model.isBlocked(conversation.address) {
-                        Image(systemName: "hand.raised.fill").font(.caption).foregroundStyle(.secondary)
+                        Image(systemName: "hand.raised.fill").font(.caption2).foregroundStyle(.secondary)
                             .accessibilityLabel(Text("Blocked"))
                     }
-                    Spacer()
-                    Text(shortTime(conversation.last.date)).font(.subheadline).foregroundStyle(.secondary)
+                    Spacer(minLength: 4)
+                    Text(shortTime(conversation.last.date))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
                 }
-                Text(MessageText.plain(conversation.last.body)).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
-                    .frame(maxWidth: .infinity, minHeight: 20, alignment: .topLeading)
+                Text(MessageText.plain(conversation.last.body))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
         }
-        .padding(.vertical, 2)
-        .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 14))
-        .alignmentGuide(.listRowSeparatorLeading) { _ in 76 }
+        .padding(.vertical, 5)
+        .contentShape(Rectangle())
+        .listRowInsets(EdgeInsets(top: 7, leading: 10, bottom: 7, trailing: 14))
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 70 }
     }
 }
 
@@ -392,28 +404,41 @@ private struct ThreadProfileHeader: View {
     let photo: String?
 
     var body: some View {
-        HStack(spacing: 12) {
-            Avatar(name: name, photo: photo, size: 44)
-            VStack(alignment: .leading, spacing: 3) {
+        VStack(spacing: 8) {
+            Avatar(name: name, photo: photo, size: 62)
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.7))
+                .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
+
+            VStack(spacing: 4) {
                 Text(name)
-                    .font(.headline)
+                    .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text(number)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-                    .accessibilityLabel(Text("Phone number \(number)"))
+                HStack(spacing: 6) {
+                    Image(systemName: "phone")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(number)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .accessibilityLabel(Text("Phone number \(number)"))
+                }
             }
-            Spacer(minLength: 0)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity)
+            .tetherLiquidGlass(cornerRadius: 22)
+            .padding(.horizontal, 28)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground))
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity)
+        .background(.bar)
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Color(.separator).opacity(0.35)).frame(height: 0.5)
+            Rectangle().fill(Color.primary.opacity(0.07)).frame(height: 0.5)
         }
     }
 }
