@@ -488,9 +488,11 @@ object CallAudio {
         val s = (soc ?: "").lowercase(); val p = (platform ?: "").lowercase(); val h = (hardware ?: "").lowercase()
         val qualcomm = s == "qti" || s.contains("qualcomm") || h == "qcom" ||
             Regex("^(msm|sdm|sm|apq|qcs|lahaina|kona|taro|kalama|pineapple|sun|lito|bengal|holi|trinket|atoll|parrot|crow|blair)").containsMatchIn(p)
+        // Detect the actual chipset before the handset brand: Samsung's MediaTek models
+        // (e.g. Galaxy A07) need MediaTek's UL source-mute key, not Samsung's Exynos key.
+        if (s.contains("mediatek") || p.startsWith("mt") || h.startsWith("mt")) return Silence.MEDIATEK
         if (manufacturer.equals("samsung", ignoreCase = true)) return if (qualcomm) Silence.SAMSUNG_QUALCOMM else Silence.SAMSUNG
         return when {
-            s.contains("mediatek") || p.startsWith("mt") || h.startsWith("mt") -> Silence.MEDIATEK
             qualcomm -> Silence.QUALCOMM
             else -> Silence.OTHER
         }
