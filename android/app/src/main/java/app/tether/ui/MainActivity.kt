@@ -115,7 +115,7 @@ class MainActivity : Activity() {
 
     private fun renderTabs() {
         tabs.removeAllViews()
-        val entries = listOf("keypad" to "کی‌پد", "contacts" to "مخاطبین", "recent" to "Recent", "settings" to "تنظیمات")
+        val entries = listOf("keypad" to "Keypad", "contacts" to "Contacts", "recent" to "Recents", "settings" to "Settings")
         for ((key, title) in entries) {
             val b = TextView(this).apply {
                 text = title
