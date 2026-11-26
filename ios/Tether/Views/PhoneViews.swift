@@ -20,23 +20,38 @@ struct RecentsView: View {
         NavigationStack {
             List(entries) { e in
                 HStack(spacing: 12) {
-                    Image(systemName: icon(e.type)).foregroundStyle(e.type == 3 || e.type == 5 ? .red : .secondary).frame(width: 22)
-                    VStack(alignment: .leading, spacing: 2) {
+                    Avatar(name: e.name ?? model.displayName(e.num),
+                           photo: model.photo(for: e.num), size: 46)
+                    VStack(alignment: .leading, spacing: 3) {
                         Text(e.name ?? model.displayName(e.num))
                             .font(.body.weight(.semibold))
-                            .foregroundStyle(e.type == 3 ? .red : .primary)
+                            .foregroundStyle(e.type == 3 || e.type == 5 ? .red : .primary)
+                            .lineLimit(1)
+                        Text(model.formatted(e.num))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                         HStack(spacing: 6) {
+                            Image(systemName: icon(e.type))
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(e.type == 3 || e.type == 5 ? .red : .secondary)
                             if let sim = model.simName(e.sub) {
                                 Text(sim).font(.caption2).padding(.horizontal, 5)
                                     .background(Color(.tertiarySystemFill), in: Capsule())
                             }
-                            if e.dur > 0 { Text(Duration.seconds(e.dur).formatted(.time(pattern: .minuteSecond))) }
+                            if e.dur > 0 {
+                                Text(Duration.seconds(e.dur).formatted(.time(pattern: .minuteSecond)))
+                            }
                         }
                         .font(.caption).foregroundStyle(.secondary)
                     }
-                    Spacer()
-                    Text(shortTime(e.date)).font(.caption).foregroundStyle(.secondary)
+                    Spacer(minLength: 8)
+                    Text(shortTime(e.date))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
                 }
+                .padding(.vertical, 3)
                 .contentShape(Rectangle())
                 .onTapGesture { model.dial(e.num, sub: e.sub) }
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -82,16 +97,22 @@ struct RecentsView: View {
             } message: {
                 Text("The call history will be deleted from your Android phone and all your devices.")
             }
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Clear") { clearing = true }
                         .disabled(model.data.recents.isEmpty || !model.linkState.isConnected)
                 }
-                ToolbarItem(placement: .principal) {
-                    Picker("", selection: $missedOnly) {
-                        Text("All").tag(false)
-                        Text("Missed").tag(true)
-                    }.pickerStyle(.segmented).frame(width: 180)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Picker("Show Calls", selection: $missedOnly) {
+                            Text("All").tag(false)
+                            Text("Missed").tag(true)
+                        }
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                    }
+                    .accessibilityLabel(Text("Filter calls"))
                 }
             }
         }
