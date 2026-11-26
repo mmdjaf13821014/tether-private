@@ -405,11 +405,11 @@ private struct ThreadProfileHeader: View {
     let number: String
     let photo: String?
     let isKnown: Bool
-    private let avatarSize: CGFloat = 72
+    private let avatarSize: CGFloat = 68
 
-    /// Keep the identity directly beneath the navigation bar, with the name capsule close to the portrait.
+    /// Raised compact identity header, anchored close to the navigation bar.
     var body: some View {
-        VStack(spacing: 1) {
+        VStack(spacing: 0) {
             Avatar(name: isKnown ? name : number,
                    photo: isKnown ? photo : nil,
                    size: avatarSize)
@@ -420,13 +420,13 @@ private struct ThreadProfileHeader: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .padding(.horizontal, 16)
-                .padding(.vertical, 6)
+                .padding(.vertical, 5)
                 .tetherLiquidGlass(cornerRadius: 20)
                 .fixedSize(horizontal: true, vertical: false)
         }
-        .padding(.top, -7)
+        .padding(.top, -13)
         .frame(maxWidth: .infinity, alignment: .top)
-        .frame(height: 104, alignment: .top)
+        .frame(height: 92, alignment: .top)
     }
 }
 /// "Today 13:20" / "Yesterday 09:05" / "Mon 13:20" / "12 Nov 2026 at 13:20", as Messages writes it.
