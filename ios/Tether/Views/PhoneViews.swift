@@ -184,7 +184,7 @@ struct KeypadView: View {
                                     Text(k.1).font(.system(size: 9, weight: .semibold)).foregroundStyle(.secondary)
                                 }
                                 .frame(width: 78, height: 78)
-                                .background(Color(.secondarySystemBackground), in: Circle())
+                                .tetherLiquidGlassCircle()
                             }
                             .buttonStyle(.plain)
                             // Hold 0 for "+" (the tap that ends the hold must not add a 0 as well).
@@ -193,6 +193,10 @@ struct KeypadView: View {
                     }
                 }
             }
+            .padding(.vertical, 14)
+            .padding(.horizontal, 8)
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+            .tetherLiquidGlass(cornerRadius: 30)
             .environment(\.layoutDirection, .leftToRight)
             HStack(spacing: 26) {
                 Color.clear.frame(width: 78, height: 78)
