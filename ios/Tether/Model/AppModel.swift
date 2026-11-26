@@ -196,7 +196,7 @@ final class AppModel {
     func photo(for number: String) -> String? { photoIndex[PhoneNumber.matchKey(number)] }
     /// Resolve a contact photo through the same normalized phone-number index used by Messages and Recents.
     func photo(for contact: Contact) -> String? {
-        contact.phones.lazy.compactMap { photo(for: $0.n) }.first ?? contact.photo
+        contact.phones.lazy.compactMap { self.photo(for: $0.n) }.first ?? contact.photo
     }
     /// A contact's name, else the number in a left-to-right isolate (so "+98…" keeps its plus sign in Persian layout).
     func displayName(_ number: String) -> String { name(for: number) ?? (number.isEmpty ? String(localized: "Unknown") : "\u{2066}\(formatted(number))\u{2069}") }
