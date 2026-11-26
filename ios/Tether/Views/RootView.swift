@@ -15,7 +15,6 @@ struct RootView: View {
         VStack(spacing: 0) {
             ReturnToCallBanner()
             RemoteCallBanner()
-            if model.isPaired || router.tab != .link { StatusStrip() }
             TabView(selection: $router.tab) {
                 RecentsView()
                     .tabItem { Label("Recents", systemImage: "clock") }

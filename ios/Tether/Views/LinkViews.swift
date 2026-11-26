@@ -13,7 +13,9 @@ struct LinkView: View {
 
     @ViewBuilder private var bodyContent: some View {
         NavigationStack {
-            ScrollViewReader { scroller in
+            VStack(spacing: 0) {
+                StatusStrip()
+                ScrollViewReader { scroller in
             List {
                 if !model.isPaired {
                     SetupGuideSection(
@@ -248,6 +250,7 @@ struct LinkView: View {
             .confirmationDialog("Forget the Android phone and delete synced data from this iPhone?", isPresented: $confirmUnpair,
                                 titleVisibility: .visible) {
                 Button("Unpair", role: .destructive) { model.unpair() }
+            }
             }
         }
     }

@@ -240,14 +240,6 @@ struct ThreadView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    ThreadProfileHeader(
-                        name: name,
-                        number: model.formatted(address),
-                        photo: model.photo(for: address)
-                    )
-                    .padding(.top, 14)
-                    .padding(.bottom, 18)
-
                     ForEach(rows(msgs)) { r in
                         if let h = r.header {
                             Text(h).font(.caption2.weight(.medium)).foregroundStyle(.secondary)
@@ -272,6 +264,14 @@ struct ThreadView: View {
                 if let last = msgs.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
                 if model.appActive { model.markRead(thread: thread) }
             }
+        }
+        // Keep the conversation identity fixed above the transcript, like iOS Messages.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            ThreadProfileHeader(
+                name: name,
+                number: model.formatted(address),
+                photo: model.photo(for: address)
+            )
         }
         .safeAreaInset(edge: .bottom) { composer }
         // Like Messages: no tab bar inside a conversation (it sat under the composer and the keyboard).
@@ -385,32 +385,36 @@ struct ThreadView: View {
 }
 
 
-/// Compact contact identity at the top of a conversation, with the number in its own glass capsule.
+/// Fixed, native-style conversation identity: the person stays visible while the transcript scrolls.
 private struct ThreadProfileHeader: View {
     let name: String
     let number: String
     let photo: String?
 
     var body: some View {
-        VStack(spacing: 7) {
-            Avatar(name: name, photo: photo, size: 68)
-            Text(name)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .padding(.horizontal, 18)
-            Text(number)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 6)
-                .tetherLiquidGlass(cornerRadius: 18)
-                .accessibilityLabel(Text("Phone number \(number)"))
+        HStack(spacing: 12) {
+            Avatar(name: name, photo: photo, size: 44)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(name)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(number)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .accessibilityLabel(Text("Phone number \(number)"))
+            }
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color(.separator).opacity(0.35)).frame(height: 0.5)
+        }
     }
 }
 
