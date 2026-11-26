@@ -115,28 +115,66 @@ class MainActivity : Activity() {
 
     private fun renderTabs() {
         tabs.removeAllViews()
-        val entries = listOf("keypad" to "Keypad", "contacts" to "Contacts", "recent" to "Recents", "settings" to "Settings")
-        for ((key, title) in entries) {
-            val b = TextView(this).apply {
+        val entries = listOf(
+            Triple("keypad", "⌗", "Keypad"),
+            Triple("contacts", "♙", "Contacts"),
+            Triple("recent", "◷", "Recents"),
+            Triple("settings", "⚙", "Settings")
+        )
+        for ((key, glyph, title) in entries) {
+            val active = selectedTab == key
+            val item = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                isClickable = true
+                isFocusable = true
+                setPadding(dp(3), dp(7), dp(3), dp(6))
+                background = if (active) GradientDrawable().apply {
+                    setColor(Color.rgb(48, 48, 52)); cornerRadius = dp(13).toFloat()
+                } else null
+                layoutParams = LinearLayout.LayoutParams(0, dp(58), 1f).apply {
+                    setMargins(dp(2), 0, dp(2), 0)
+                }
+                setOnClickListener {
+                    if (selectedTab != key) {
+                        selectedTab = key
+                        render()
+                    }
+                }
+            }
+            item.addView(TextView(this).apply {
+                text = glyph
+                gravity = Gravity.CENTER
+                textSize = 22f
+                setTextColor(if (active) Color.rgb(10, 132, 255) else Color.rgb(174, 174, 178))
+            })
+            item.addView(TextView(this).apply {
                 text = title
                 gravity = Gravity.CENTER
-                textSize = 12f
-                setTextColor(color(if (selectedTab == key) R.color.accent else R.color.text))
-                setTypeface(typeface, if (selectedTab == key) Typeface.BOLD else Typeface.NORMAL)
-                setPadding(dp(3), dp(9), dp(3), dp(9))
-                layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
-                setOnClickListener { selectedTab = key; render() }
-            }
-            tabs.addView(b)
+                textSize = 10f
+                setTextColor(if (active) Color.rgb(10, 132, 255) else Color.rgb(174, 174, 178))
+                setTypeface(typeface, if (active) Typeface.BOLD else Typeface.NORMAL)
+            })
+            tabs.addView(item)
         }
     }
 
+    private fun sectionHeader(title: String) {
+        root.addView(TextView(this).apply {
+            text = title
+            textSize = 32f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(color(R.color.text))
+            setPadding(dp(2), dp(8), 0, dp(18))
+        })
+    }
+
     private fun renderKeypad() {
-        root.addView(TextView(this).apply { text = "شماره‌گیری"; textSize = 26f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
+        root.addView(TextView(this).apply { text = "Keypad"; textSize = 32f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
         val display = TextView(this).apply {
-            text = dialNumber.ifEmpty { "شماره را وارد کنید" }; textSize = 26f; gravity = Gravity.CENTER
+            text = dialNumber.ifEmpty { "Enter a number" }; textSize = 26f; gravity = Gravity.CENTER
             setTextColor(color(if (dialNumber.isEmpty()) R.color.muted else R.color.text))
-            setPadding(0, dp(28), 0, dp(22))
+            setPadding(0, dp(24), 0, dp(18))
             setOnLongClickListener { dialNumber = ""; render(); true }
         }
         root.addView(display)
@@ -146,8 +184,8 @@ class MainActivity : Activity() {
             for (digit in line) {
                 val cell = TextView(this).apply {
                     text = digit; textSize = 27f; gravity = Gravity.CENTER; setTextColor(color(R.color.text))
-                    background = GradientDrawable().apply { setColor(color(R.color.surface)); shape = GradientDrawable.OVAL }
-                    layoutParams = LinearLayout.LayoutParams(dp(68), dp(68)).apply { setMargins(dp(12), dp(5), dp(12), dp(5)) }
+                    background = GradientDrawable().apply { setColor(Color.rgb(45, 45, 48)); shape = GradientDrawable.OVAL }
+                    layoutParams = LinearLayout.LayoutParams(dp(76), dp(76)).apply { setMargins(dp(12), dp(5), dp(12), dp(5)) }
                     setOnClickListener { dialNumber += digit; display.text = dialNumber; display.setTextColor(color(R.color.text)) }
                 }
                 row.addView(cell)
@@ -155,7 +193,7 @@ class MainActivity : Activity() {
             root.addView(row)
         }
         val actions = LinearLayout(this).apply { gravity = Gravity.CENTER; orientation = LinearLayout.HORIZONTAL }
-        actions.addView(button("تماس") {
+        actions.addView(button("Call") {
             if (dialNumber.isNotBlank()) {
                 try { startActivity(Intent(Intent.ACTION_CALL, Uri.fromParts("tel", dialNumber, null))) }
                 catch (_: Throwable) { Toast.makeText(this, "تماس برقرار نشد", Toast.LENGTH_LONG).show() }
@@ -163,13 +201,13 @@ class MainActivity : Activity() {
         })
         actions.addView(button("⌫", secondary = true) {
             if (dialNumber.isNotEmpty()) dialNumber = dialNumber.dropLast(1)
-            display.text = dialNumber.ifEmpty { "شماره را وارد کنید" }
+            display.text = dialNumber.ifEmpty { "Enter a number" }
         })
         root.addView(actions)
     }
 
     private fun renderContacts() {
-        root.addView(TextView(this).apply { text = "مخاطبین"; textSize = 26f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
+        root.addView(TextView(this).apply { text = "Contacts"; textSize = 32f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
         if (checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             root.addView(label("برای نمایش مخاطبین، دسترسی مخاطبین را فعال کن.", R.color.warn))
             root.addView(button("اعطای دسترسی") { requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 3) })
@@ -197,7 +235,7 @@ class MainActivity : Activity() {
     }
 
     private fun renderRecent() {
-        root.addView(TextView(this).apply { text = "تماس‌های اخیر"; textSize = 26f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
+        root.addView(TextView(this).apply { text = "Recents"; textSize = 32f; setTypeface(typeface, Typeface.BOLD); setTextColor(color(R.color.text)) })
         if (checkSelfPermission(Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
             root.addView(label("برای نمایش سابقه تماس، دسترسی تماس‌ها را فعال کن.", R.color.warn))
             root.addView(button("اعطای دسترسی") { requestPermissions(arrayOf(Manifest.permission.READ_CALL_LOG), 4) })
