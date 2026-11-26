@@ -11,6 +11,21 @@ struct MessagesView: View {
     @State private var composeTo = ""
     @State private var deleting: Conversation?
     @State private var blocking: String?
+    @State private var senderFilter: SenderFilter = .all
+
+    private enum SenderFilter: String {
+        case all, known, unknown
+    }
+
+    private var filteredConversations: [Conversation] {
+        model.conversations.filter { conversation in
+            switch senderFilter {
+            case .all: true
+            case .known: model.name(for: conversation.address) != nil
+            case .unknown: model.name(for: conversation.address) == nil
+            }
+        }
+    }
 
     @ViewBuilder private func muteButton(_ c: Conversation) -> some View {
         let muted = model.isMuted(c.thread)
@@ -46,7 +61,7 @@ struct MessagesView: View {
                         }
                     }
                 } else {
-                    ForEach(model.conversations) { c in
+                    ForEach(filteredConversations) { c in
                         NavigationLink(value: c.thread) { ConversationRow(conversation: c) }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) { deleting = c } label: { Label("Delete", systemImage: "trash") }
@@ -62,6 +77,9 @@ struct MessagesView: View {
                     EmptyStateView(model.syncing ? "Syncing…" : "No messages",
                                            systemImage: "message",
                                            description: Text(model.isPaired ? "" : "Pair with your Android phone in the Link tab."))
+                } else if filteredConversations.isEmpty && search.isEmpty {
+                    EmptyStateView(senderFilter == .unknown ? "No unknown senders" : "No saved contacts",
+                                   systemImage: "person.crop.circle")
                 }
             }
             .confirmationDialog(deleting.map { model.displayName($0.address) } ?? "",
@@ -86,6 +104,17 @@ struct MessagesView: View {
             .navigationTitle("Messages")
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Menu {
+                        Picker("Messages", selection: $senderFilter) {
+                            Text("All Messages").tag(SenderFilter.all)
+                            Text("Known Senders").tag(SenderFilter.known)
+                            Text("Unknown Senders").tag(SenderFilter.unknown)
+                        }
+                    } label: {
+                        Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { hideKeyboard(); composing = true } label: { Image(systemName: "square.and.pencil") }
                         .disabled(!model.linkState.isConnected)
