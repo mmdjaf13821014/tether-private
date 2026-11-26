@@ -193,11 +193,9 @@ struct ThreadView: View {
             let prev = i > 0 ? msgs[i - 1] : nil
             let next = i + 1 < msgs.count ? msgs[i + 1] : nil
             let gap: Int64 = 15 * 60_000
-            // With two SIMs the line above a run says which SIM it is on, and a change of SIM starts a new run.
-            let sim = model.simName(m.sub)
-            let simChanged = sim != nil && prev != nil && prev!.sub != m.sub
-            let header = (prev == nil || m.date - prev!.date > gap || simChanged)
-                ? transcriptTime(m.date) + (sim.map { " · \($0)" } ?? "") : nil
+            // Keep carrier / SIM metadata out of the transcript, matching the compact native Messages layout.
+            let header = (prev == nil || m.date - prev!.date > gap)
+                ? transcriptTime(m.date) : nil
             let tail = next == nil || next!.incoming != m.incoming || next!.date - m.date > gap
             var status: String?
             if m.box == 5 { status = String(localized: "Not Delivered") }
@@ -219,7 +217,7 @@ struct ThreadView: View {
                     ForEach(rows(msgs)) { r in
                         if let h = r.header {
                             Text(h).font(.caption2.weight(.medium)).foregroundStyle(.secondary)
-                                .padding(.top, 14).padding(.bottom, 6)
+                                .padding(.top, 8).padding(.bottom, 4)
                         }
                         Bubble(message: r.message, tail: r.tail)
                             .padding(.bottom, r.tail ? 8 : 2)
@@ -327,14 +325,10 @@ struct ThreadView: View {
                 .padding(.trailing, 3).padding(.bottom, 3)
                 .accessibilityLabel(Text("Send"))
             }
-            .background(Color(.secondarySystemBackground),
-                        in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(Color(.separator).opacity(0.35), lineWidth: 0.7))
+
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.bar, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .tetherLiquidGlass(cornerRadius: 28)
         .padding(.horizontal, 10)
         .padding(.bottom, 4)
