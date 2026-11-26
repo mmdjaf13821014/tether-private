@@ -195,7 +195,7 @@ struct KeypadView: View {
             }
             .padding(.vertical, 14)
             .padding(.horizontal, 8)
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+            // One native glass surface only; the extra material layer made the keypad look muddy.
             .tetherLiquidGlass(cornerRadius: 30)
             .environment(\.layoutDirection, .leftToRight)
             HStack(spacing: 26) {

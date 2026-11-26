@@ -5,6 +5,7 @@ import TetherCore
 struct RootView: View {
     @Environment(\.appModel) private var model
     @Environment(\.router) private var router
+    @AppStorage("tether.appearance") private var appearanceMode = "system"
 
     var body: some View { WithPerceptionTracking { bodyContent } }
 
@@ -99,6 +100,7 @@ struct RootView: View {
             InCallView().environment(\.appModel, AppModel.shared).environment(\.router, Router.shared)
         }
         .tint(Color("AccentColor"))
+        .preferredColorScheme(appearanceMode == "dark" ? .dark : (appearanceMode == "light" ? .light : nil))
         .task {
             if !model.isPaired { router.tab = .link }
         }
@@ -139,6 +141,7 @@ struct RemoteCallBanner: View {
 /// Thin strip at the top: link state, battery and carrier of the Android phone.
 struct StatusStrip: View {
     @Environment(\.appModel) private var model
+    @AppStorage("tether.appearance") private var appearanceMode = "system"
 
     var body: some View { WithPerceptionTracking { bodyContent } }
 
@@ -155,6 +158,20 @@ struct StatusStrip: View {
                 }
                 .foregroundStyle(s.battery <= 15 && !s.charging ? .red : .secondary)
             }
+            Menu {
+                Picker("Appearance", selection: $appearanceMode) {
+                    Label("System", systemImage: "iphone").tag("system")
+                    Label("Light", systemImage: "sun.max").tag("light")
+                    Label("Dark", systemImage: "moon").tag("dark")
+                }
+            } label: {
+                Image(systemName: appearanceMode == "dark" ? "moon.fill" : (appearanceMode == "light" ? "sun.max.fill" : "circle.lefthalf.filled"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color("AccentColor"))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Circle())
+            }
+            .accessibilityLabel("Appearance")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -283,7 +300,7 @@ struct SimPicker: View {
                     Text(label).font(.caption.weight(.medium))
                 }
                 .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(Color(.tertiarySystemFill), in: Capsule())
+                .tetherLiquidGlass(cornerRadius: 18)
             }
         }
     }

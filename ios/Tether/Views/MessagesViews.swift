@@ -152,10 +152,7 @@ struct ConversationRow: View {
                     Text(shortTime(conversation.last.date)).font(.subheadline).foregroundStyle(.secondary)
                 }
                 Text(MessageText.plain(conversation.last.body)).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
-                    .frame(maxWidth: .infinity, minHeight: 36, alignment: .topLeading)
-                if let sim = model.simName(conversation.last.sub) {
-                    Label(sim, systemImage: "simcard").font(.caption2).foregroundStyle(.secondary).labelStyle(.titleAndIcon)
-                }
+                    .frame(maxWidth: .infinity, minHeight: 20, alignment: .topLeading)
             }
         }
         .padding(.vertical, 2)
@@ -200,7 +197,7 @@ struct ThreadView: View {
             var status: String?
             if m.box == 5 { status = String(localized: "Not Delivered") }
             else if m.box == 4 || m.box == 6 { status = String(localized: "Sending…") }
-            else if m.id == lastMine && !m.incoming { status = String(localized: "Sent as Text Message") }
+
             out.append(Row(message: m, header: header, tail: tail, status: status, failed: m.box == 5))
         }
         return out
@@ -220,7 +217,7 @@ struct ThreadView: View {
                                 .padding(.top, 8).padding(.bottom, 4)
                         }
                         Bubble(message: r.message, tail: r.tail)
-                            .padding(.bottom, r.tail ? 8 : 2)
+                            .padding(.bottom, r.tail ? 4 : 0)
                             .id(r.message.id)
                         if let st = r.status {
                             Text(st).font(.caption2.weight(r.failed ? .semibold : .regular))
@@ -312,6 +309,8 @@ struct ThreadView: View {
                 TextField("Text Message · SMS", text: $text, axis: .vertical)
                     .lineLimit(1...6)
                     .focused($focused)
+                    .textFieldStyle(.plain)
+                    .tint(Color("AccentColor"))
                     .padding(.leading, 12).padding(.vertical, 7)
                 Button {
                     model.sendSms(to: address, body: text, sub: sub)
