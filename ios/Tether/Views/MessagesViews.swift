@@ -240,6 +240,14 @@ struct ThreadView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
+                    ThreadProfileHeader(
+                        name: name,
+                        number: model.formatted(address),
+                        photo: model.photo(for: address)
+                    )
+                    .padding(.top, 14)
+                    .padding(.bottom, 18)
+
                     ForEach(rows(msgs)) { r in
                         if let h = r.header {
                             Text(h).font(.caption2.weight(.medium)).foregroundStyle(.secondary)
@@ -270,13 +278,6 @@ struct ThreadView: View {
         .toolbar(.hidden, for: .tabBar)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack(spacing: 1) {
-                    Avatar(name: name, photo: model.photo(for: address), size: 26)
-                    Text(name).font(.caption2).lineLimit(1)
-                }
-                .accessibilityElement(children: .combine)
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { model.dial(address, sub: sub) } label: { Image(systemName: "phone") }
                     .disabled(!model.linkState.isConnected || address.isEmpty)
@@ -332,15 +333,34 @@ struct ThreadView: View {
 
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            SimPicker(sub: Binding(get: { sub }, set: { sub = $0; model.setPreferredSim($0, for: address) }))
-                .padding(.bottom, 3)
+            // Like the Messages "+" control: SIM selection is a separate circular action.
+            Menu {
+                ForEach(model.sims) { sim in
+                    Button {
+                        sub = sim.sub
+                        model.setPreferredSim(sim.sub, for: address)
+                    } label: {
+                        Label("\(sim.name) · \(sim.carrier)",
+                              systemImage: sub == sim.sub ? "checkmark.circle.fill" : "simcard")
+                    }
+                }
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 21, weight: .medium))
+                    .frame(width: 42, height: 42)
+                    .contentShape(Circle())
+                    .tetherLiquidGlassCircle()
+            }
+            .accessibilityLabel(Text("Choose SIM"))
+            .padding(.bottom, 2)
+
             HStack(alignment: .bottom, spacing: 4) {
                 TextField("Text Message · SMS", text: $text, axis: .vertical)
                     .lineLimit(1...6)
                     .focused($focused)
                     .textFieldStyle(.plain)
                     .tint(Color("AccentColor"))
-                    .padding(.leading, 12).padding(.vertical, 7)
+                    .padding(.leading, 12).padding(.vertical, 8)
                 Button {
                     model.sendSms(to: address, body: text, sub: sub)
                     text = ""
@@ -353,13 +373,44 @@ struct ThreadView: View {
                 .padding(.trailing, 3).padding(.bottom, 3)
                 .accessibilityLabel(Text("Send"))
             }
-
+            .padding(.leading, 2)
+            .padding(.trailing, 3)
+            .padding(.vertical, 3)
+            .tetherLiquidGlass(cornerRadius: 25)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .tetherLiquidGlass(cornerRadius: 28)
-        .padding(.horizontal, 10)
         .padding(.bottom, 4)
+    }
+}
+
+
+/// Compact contact identity at the top of a conversation, with the number in its own glass capsule.
+private struct ThreadProfileHeader: View {
+    let name: String
+    let number: String
+    let photo: String?
+
+    var body: some View {
+        VStack(spacing: 7) {
+            Avatar(name: name, photo: photo, size: 68)
+            Text(name)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .padding(.horizontal, 18)
+            Text(number)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .padding(.horizontal, 13)
+                .padding(.vertical, 6)
+                .tetherLiquidGlass(cornerRadius: 18)
+                .accessibilityLabel(Text("Phone number \(number)"))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
     }
 }
 

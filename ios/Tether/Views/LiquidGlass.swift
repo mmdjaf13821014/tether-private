@@ -12,13 +12,18 @@ extension View {
         }
     }
 
-    /// Circular native Liquid Glass surface for round keypad controls.
+    /// Circular native Liquid Glass surface for round controls, optionally tinted (e.g. the green call key).
     @ViewBuilder
-    func tetherLiquidGlassCircle() -> some View {
+    func tetherLiquidGlassCircle(tint: Color? = nil) -> some View {
         if #available(iOS 26.0, *) {
-            self.glassEffect(.regular, in: .circle)
+            if let tint {
+                self.glassEffect(.regular.tint(tint), in: .circle)
+            } else {
+                self.glassEffect(.regular, in: .circle)
+            }
         } else {
             self.background(.ultraThinMaterial, in: Circle())
+                .background((tint ?? .clear).opacity(tint == nil ? 0 : 0.22), in: Circle())
                 .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.7))
         }
     }

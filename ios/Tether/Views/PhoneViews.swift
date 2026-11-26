@@ -180,10 +180,17 @@ struct KeypadView: View {
                         ForEach(keys[r], id: \.0) { k in
                             Button { if k.0 == "0" && longPressedZero { longPressedZero = false } else { longPressedZero = false; number.append(k.0) } } label: {
                                 VStack(spacing: 0) {
-                                    Text(k.0).font(.system(size: 32, weight: .regular, design: .rounded))
-                                    Text(k.1).font(.system(size: 9, weight: .semibold)).foregroundStyle(.secondary)
+                                    Text(k.0)
+                                        .font(.system(size: 32, weight: .regular, design: .rounded))
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                    if !k.1.isEmpty {
+                                        Text(k.1)
+                                            .font(.system(size: 9, weight: .semibold))
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
-                                .frame(width: 78, height: 78)
+                                .frame(width: 78, height: 78, alignment: .center)
+                                .contentShape(Circle())
                                 .tetherLiquidGlassCircle()
                             }
                             .buttonStyle(.plain)
@@ -191,18 +198,21 @@ struct KeypadView: View {
                             .simultaneousGesture(LongPressGesture().onEnded { _ in if k.0 == "0" { number.append("+"); longPressedZero = true } })
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
-            .padding(.vertical, 14)
+            .padding(.vertical, 8)
             .padding(.horizontal, 8)
-            // One native glass surface only; the extra material layer made the keypad look muddy.
-            .tetherLiquidGlass(cornerRadius: 30)
             .environment(\.layoutDirection, .leftToRight)
             HStack(spacing: 26) {
                 Color.clear.frame(width: 78, height: 78)
                 Button { model.dial(number, sub: sub) } label: {
-                    Image(systemName: "phone.fill").font(.system(size: 30)).foregroundStyle(.white).accessibilityLabel(Text("Call"))
-                        .frame(width: 78, height: 78).background(.green, in: Circle())
+                    Image(systemName: "phone.fill")
+                        .font(.system(size: 30, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .accessibilityLabel(Text("Call"))
+                        .frame(width: 78, height: 78)
+                        .tetherLiquidGlassCircle(tint: .green)
                 }
                 .disabled(number.isEmpty || !model.linkState.isConnected)
                 Button { if !number.isEmpty { number.removeLast() } } label: {

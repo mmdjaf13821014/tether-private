@@ -255,14 +255,26 @@ struct Avatar: View {
     var photo: String? = nil
     var size: CGFloat = 40
 
+    private var fallbackColors: [Color] {
+        let palettes: [[Color]] = [
+            [Color(red: 0.36, green: 0.55, blue: 0.88), Color(red: 0.25, green: 0.39, blue: 0.72)],
+            [Color(red: 0.62, green: 0.48, blue: 0.82), Color(red: 0.40, green: 0.32, blue: 0.68)],
+            [Color(red: 0.30, green: 0.66, blue: 0.67), Color(red: 0.20, green: 0.46, blue: 0.55)],
+            [Color(red: 0.91, green: 0.57, blue: 0.38), Color(red: 0.72, green: 0.37, blue: 0.31)],
+            [Color(red: 0.82, green: 0.48, blue: 0.63), Color(red: 0.62, green: 0.31, blue: 0.49)],
+            [Color(red: 0.48, green: 0.61, blue: 0.78), Color(red: 0.31, green: 0.43, blue: 0.63)]
+        ]
+        let index = name.unicodeScalars.reduce(0) { ($0 + Int($1.value)) % palettes.count }
+        return palettes[index]
+    }
+
     var body: some View {
         Group {
             if let photo, let data = Data(base64Encoded: photo), let img = UIImage(data: data) {
                 Image(uiImage: img).resizable().scaledToFill()
             } else {
                 ZStack {
-                    LinearGradient(colors: [Color(red: 0.65, green: 0.67, blue: 0.72), Color(red: 0.52, green: 0.54, blue: 0.58)],   // theme: ok, Apple's contact-avatar grey
-                                   startPoint: .top, endPoint: .bottom)
+                    LinearGradient(colors: fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
                     if let text = AvatarImage.initials(name) {
                         Text(text).font(.system(size: size * 0.42, weight: .medium)).foregroundStyle(.white)
                     } else {
