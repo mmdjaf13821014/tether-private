@@ -194,7 +194,7 @@ class MainActivity : Activity() {
         private val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = if (active) Color.rgb(82, 153, 255) else Color.rgb(174, 176, 183)
             style = Paint.Style.STROKE
-            strokeWidth = dp(1.8).toFloat()
+            strokeWidth = dp(2).toFloat()
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
         }
@@ -206,11 +206,11 @@ class MainActivity : Activity() {
             when (kind) {
                 "keypad" -> {
                     for (row in -1..1) for (col in -1..1) {
-                        canvas.drawCircle(cx + col * dp(7), cy + row * dp(7), dp(1.6).toFloat(), p)
+                        canvas.drawCircle(cx + col * dp(7), cy + row * dp(7), dp(2).toFloat(), p)
                     }
-                    canvas.drawCircle(cx - dp(7), cy + dp(14), dp(1.5).toFloat(), p)
-                    canvas.drawCircle(cx, cy + dp(14), dp(1.5).toFloat(), p)
-                    canvas.drawCircle(cx + dp(7), cy + dp(14), dp(1.5).toFloat(), p)
+                    canvas.drawCircle(cx - dp(7), cy + dp(14), dp(2).toFloat(), p)
+                    canvas.drawCircle(cx, cy + dp(14), dp(2).toFloat(), p)
+                    canvas.drawCircle(cx + dp(7), cy + dp(14), dp(2).toFloat(), p)
                 }
                 "contacts" -> {
                     canvas.drawCircle(cx, cy - dp(5), dp(4).toFloat(), p)
