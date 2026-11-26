@@ -146,6 +146,8 @@ struct MessagesView: View {
                 #endif
             }
         }
+        // Keep the push/pop motion short and consistent; the tab bar is explicitly restored on the root.
+        .animation(.easeInOut(duration: 0.18), value: path)
     }
 
     private var searchHits: [Sms] {

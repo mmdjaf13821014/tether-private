@@ -22,28 +22,31 @@ struct RecentsView: View {
                 HStack(spacing: 12) {
                     Avatar(name: e.name ?? model.displayName(e.num),
                            photo: model.photo(for: e.num), size: 46)
-                    VStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(e.name ?? model.displayName(e.num))
                             .font(.body.weight(.semibold))
                             .foregroundStyle(e.type == 3 || e.type == 5 ? .red : .primary)
-                            .lineLimit(1)
-                        Text(model.formatted(e.num))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                         HStack(spacing: 6) {
                             Image(systemName: icon(e.type))
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(e.type == 3 || e.type == 5 ? .red : .secondary)
+                            Text(model.formatted(e.num))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
                             if let sim = model.simName(e.sub) {
-                                Text(sim).font(.caption2).padding(.horizontal, 5)
+                                Text(sim)
+                                    .font(.caption2)
+                                    .padding(.horizontal, 5)
                                     .background(Color(.tertiarySystemFill), in: Capsule())
                             }
                             if e.dur > 0 {
                                 Text(Duration.seconds(e.dur).formatted(.time(pattern: .minuteSecond)))
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
                             }
                         }
-                        .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 8)
                     Text(shortTime(e.date))
@@ -51,8 +54,9 @@ struct RecentsView: View {
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
-                .padding(.vertical, 3)
+                .padding(.vertical, 6)
                 .contentShape(Rectangle())
+                .listRowInsets(EdgeInsets(top: 5, leading: 14, bottom: 5, trailing: 14))
                 .onTapGesture { model.dial(e.num, sub: e.sub) }
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     // Like Phone: a swipe deletes the entry at once (from the Android phone and every device).
