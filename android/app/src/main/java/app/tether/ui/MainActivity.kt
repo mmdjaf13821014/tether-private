@@ -206,7 +206,7 @@ class MainActivity : Activity() {
             when (kind) {
                 "keypad" -> {
                     for (row in -1..1) for (col in -1..1) {
-                        canvas.drawCircle(cx + col * dp(7), cy + row * dp(7), dp(2).toFloat(), p)
+                        canvas.drawCircle(cx + col * dp(7).toFloat(), cy + row * dp(7).toFloat(), dp(2).toFloat(), p)
                     }
                     canvas.drawCircle(cx - dp(7), cy + dp(14), dp(2).toFloat(), p)
                     canvas.drawCircle(cx, cy + dp(14), dp(2).toFloat(), p)
@@ -214,21 +214,21 @@ class MainActivity : Activity() {
                 }
                 "contacts" -> {
                     canvas.drawCircle(cx, cy - dp(5), dp(4).toFloat(), p)
-                    val oval = RectF(cx - dp(10), cy, cx + dp(10), cy + dp(17))
+                    val oval = RectF(cx - dp(10).toFloat(), cy, cx + dp(10).toFloat(), cy + dp(17).toFloat())
                     canvas.drawArc(oval, 190f, 160f, false, p)
                 }
                 "recent" -> {
                     canvas.drawCircle(cx, cy, r, p)
-                    canvas.drawLine(cx, cy, cx, cy - dp(5), p)
-                    canvas.drawLine(cx, cy, cx + dp(5), cy + dp(3), p)
+                    canvas.drawLine(cx, cy, cx, cy - dp(5).toFloat(), p)
+                    canvas.drawLine(cx, cy, cx + dp(5).toFloat(), cy + dp(3).toFloat(), p)
                 }
                 else -> {
                     canvas.drawCircle(cx, cy, dp(4).toFloat(), p)
                     for (a in 0..7) {
                         val angle = Math.toRadians(a * 45.0)
-                        val x1 = cx + kotlin.math.cos(angle).toFloat() * dp(7)
+                        val x1 = cx + kotlin.math.cos(angle).toFloat() * dp(7).toFloat()
                         val y1 = cy + kotlin.math.sin(angle).toFloat() * dp(7)
-                        val x2 = cx + kotlin.math.cos(angle).toFloat() * dp(11)
+                        val x2 = cx + kotlin.math.cos(angle).toFloat() * dp(11).toFloat()
                         val y2 = cy + kotlin.math.sin(angle).toFloat() * dp(11)
                         canvas.drawLine(x1, y1, x2, y2, p)
                     }
