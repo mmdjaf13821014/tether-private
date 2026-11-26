@@ -84,6 +84,7 @@ struct MessagesView: View {
             .scrollDismissesKeyboard(.immediately)
             .refreshable { model.requestSync() }
             .navigationTitle("Messages")
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { hideKeyboard(); composing = true } label: { Image(systemName: "square.and.pencil") }
@@ -135,7 +136,7 @@ struct ConversationRow: View {
         HStack(spacing: 10) {
             // Unread marker, where Messages puts it.
             Circle().fill(conversation.unread > 0 ? Color.blue : Color.clear).frame(width: 10, height: 10)
-            Avatar(name: model.displayName(conversation.address), photo: model.photo(for: conversation.address), size: 46)
+            Avatar(name: model.displayName(conversation.address), photo: model.photo(for: conversation.address), size: 48)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(model.displayName(conversation.address)).font(.body.weight(.semibold)).lineLimit(1)
@@ -326,10 +327,17 @@ struct ThreadView: View {
                 .padding(.trailing, 3).padding(.bottom, 3)
                 .accessibilityLabel(Text("Send"))
             }
-            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color(.separator), lineWidth: 1))
+            .background(Color(.secondarySystemBackground),
+                        in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Color(.separator).opacity(0.35), lineWidth: 0.7))
         }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(.bar)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.bar, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .tetherLiquidGlass(cornerRadius: 28)
+        .padding(.horizontal, 10)
+        .padding(.bottom, 4)
     }
 }
 
