@@ -254,7 +254,16 @@ struct Avatar: View {
     var photo: String? = nil
     var size: CGFloat = 40
 
-    /// One shared iOS-style fallback used everywhere; real contact photos always take precedence.
+    /// Initials are shared by every avatar in the app; real contact photos always take precedence.
+    private var initials: String {
+        let words = name.split(whereSeparator: { $0.isWhitespace })
+        guard let first = words.first, let firstCharacter = first.first else { return "?" }
+        if words.count > 1, let lastCharacter = words.last?.first {
+            return String([firstCharacter, lastCharacter]).uppercased()
+        }
+        return String(firstCharacter).uppercased()
+    }
+
     var body: some View {
         Group {
             if let photo, let data = Data(base64Encoded: photo), let img = UIImage(data: data) {
@@ -262,9 +271,12 @@ struct Avatar: View {
             } else {
                 ZStack {
                     Circle().fill(Color(uiColor: .systemGray3))
-                    Image(systemName: "person.fill")
-                        .font(.system(size: size * 0.48, weight: .regular))
+                    Text(initials)
+                        .font(.system(size: size * (initials.count > 1 ? 0.34 : 0.44),
+                                      weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
             }
         }
