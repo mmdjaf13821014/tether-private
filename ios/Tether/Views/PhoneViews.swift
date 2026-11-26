@@ -76,6 +76,17 @@ struct RecentsView: View {
                 }
             }
             .listStyle(.plain)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Picker("Show Calls", selection: $missedOnly) {
+                    Text("All").tag(false)
+                    Text("Missed").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 6)
+                .background(.bar)
+            }
             .scrollDismissesKeyboard(.immediately)
             .refreshable { model.requestSync() }
             .onAppear { model.markRecentsSeen() }
@@ -107,17 +118,7 @@ struct RecentsView: View {
                     Button("Clear") { clearing = true }
                         .disabled(model.data.recents.isEmpty || !model.linkState.isConnected)
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Picker("Show Calls", selection: $missedOnly) {
-                            Text("All").tag(false)
-                            Text("Missed").tag(true)
-                        }
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                    }
-                    .accessibilityLabel(Text("Filter calls"))
-                }
+
             }
         }
     }

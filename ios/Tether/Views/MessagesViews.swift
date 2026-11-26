@@ -103,7 +103,6 @@ struct MessagesView: View {
             .refreshable { model.requestSync() }
             .navigationTitle("Messages")
             .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar(.visible, for: .tabBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Menu {
@@ -284,7 +283,8 @@ struct ThreadView: View {
             ThreadProfileHeader(
                 name: name,
                 number: model.formatted(address),
-                photo: model.photo(for: address)
+                photo: model.photo(for: address),
+                isKnown: model.name(for: address) != nil
             )
         }
         .safeAreaInset(edge: .bottom) { composer }
@@ -404,43 +404,75 @@ private struct ThreadProfileHeader: View {
     let name: String
     let number: String
     let photo: String?
+    let isKnown: Bool
+    private let avatarSize: CGFloat = 72
 
+    /// Compact iMessage-style identity: one portrait and one glass name/number capsule.
     var body: some View {
-        VStack(spacing: 8) {
-            Avatar(name: name, photo: photo, size: 62)
-                .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.7))
-                .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
-
-            VStack(spacing: 4) {
-                Text(name)
-                    .font(.headline.weight(.semibold))
+        ZStack(alignment: .top) {
+            VStack(spacing: 0) {
+                Spacer().frame(height: avatarSize / 2)
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0),
+                                .init(color: .black.opacity(0.72), location: 0.28),
+                                .init(color: .black, location: 1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .blendMode(.destinationIn)
+                    }
+            }
+            VStack(spacing: 7) {
+                Group {
+                    if !isKnown {
+                        ZStack {
+                            Circle().fill(Color(uiColor: .systemGray3))
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 34, weight: .regular))
+                                .foregroundStyle(.white.opacity(0.96))
+                        }
+                        .frame(width: avatarSize, height: avatarSize)
+                    } else {
+                        Avatar(name: name, photo: photo, size: avatarSize)
+                    }
+                }
+                .clipShape(Circle())
+                Text(isKnown ? name : number)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                HStack(spacing: 6) {
-                    Image(systemName: "phone")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Text(number)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .accessibilityLabel(Text("Phone number \(number)"))
-                }
+                    .minimumScaleFactor(0.8)
+                    .padding(.horizontal, 13)
+                    .padding(.vertical, 6)
+                    .tetherLiquidGlass(cornerRadius: 18)
+                    .fixedSize(horizontal: true, vertical: false)
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 9)
-            .frame(maxWidth: .infinity)
-            .tetherLiquidGlass(cornerRadius: 22)
-            .padding(.horizontal, 28)
+            .padding(.top, 2)
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
-        .padding(.bottom, 12)
         .frame(maxWidth: .infinity)
-        .background(.bar)
+        .frame(height: 112)
+        .background {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .mask {
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: .black.opacity(0.18), location: 0.32),
+                            .init(color: .black, location: 0.58)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+        }
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Color.primary.opacity(0.07)).frame(height: 0.5)
+            Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5)
         }
     }
 }

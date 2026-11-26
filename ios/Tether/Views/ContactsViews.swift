@@ -18,27 +18,30 @@ struct ContactsView: View {
                         ForEach(model.favourites) { c in FavouriteRow(contact: c) }
                     }
                 }
-                Section(search.isEmpty && !model.favourites.isEmpty ? "All Contacts" : "") {
-                    ForEach(filtered) { c in
-                        NavigationLink {
-                            ContactDetailView(contact: c)
-                        } label: {
-                            HStack(spacing: 13) {
-                                Avatar(name: c.name, photo: c.photo, size: 40)
-                                Text(c.name)
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                                    .lineLimit(1)
-                                if c.starred {
-                                    Image(systemName: "star.fill")
-                                        .font(.caption2)
-                                        .foregroundStyle(.yellow)
+                ForEach(groupedContacts, id: \.letter) { group in
+                    Section {
+                        ForEach(group.contacts) { c in
+                            NavigationLink {
+                                ContactDetailView(contact: c)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Avatar(name: c.name, photo: c.photo, size: 36)
+                                    Text(c.name).font(.body).lineLimit(1)
+                                    if c.starred {
+                                        Image(systemName: "star.fill")
+                                            .font(.caption2)
+                                            .foregroundStyle(.yellow)
+                                    }
+                                    Spacer(minLength: 0)
                                 }
-                                Spacer(minLength: 0)
+                                .padding(.vertical, 2)
+                                .contentShape(Rectangle())
                             }
-                            .padding(.vertical, 3)
-                            .contentShape(Rectangle())
                         }
+                    } header: {
+                        Text(group.letter)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -58,6 +61,21 @@ struct ContactsView: View {
             }
             .sheet(isPresented: $adding) { AddContactView().environment(\.appModel, AppModel.shared).environment(\.router, Router.shared) }
         }
+    }
+
+    private var groupedContacts: [(letter: String, contacts: [Contact])] {
+        let sorted = filtered.sorted {
+            $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
+        let groups = Dictionary(grouping: sorted) { contact -> String in
+            let first = String(contact.name.prefix(1)).uppercased()
+            return first.rangeOfCharacter(from: .letters) == nil ? "#" : first
+        }
+        return groups.keys.sorted {
+            if $0 == "#" { return false }
+            if $1 == "#" { return true }
+            return $0.localizedStandardCompare($1) == .orderedAscending
+        }.map { (letter: $0, contacts: groups[$0] ?? []) }
     }
 
     private var filtered: [Contact] {
