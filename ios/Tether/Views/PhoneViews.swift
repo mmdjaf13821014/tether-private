@@ -74,16 +74,28 @@ struct RecentsView: View {
             }
     }
 
+    @ViewBuilder
     private var callsSearchContent: some View {
-        callsBaseContent
-            .searchable(
-                text: $search,
-                isPresented: $showSearch,
-                placement: .navigationBarDrawer(displayMode: .automatic),
-                prompt: Text("Search name or number")
-            )
-            .overlay { emptySearchOverlay }
-            .overlay { emptyRecentsOverlay }
+        if #available(iOS 17.0, *) {
+            callsBaseContent
+                .searchable(
+                    text: $search,
+                    isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search name or number")
+                )
+                .overlay { emptySearchOverlay }
+                .overlay { emptyRecentsOverlay }
+        } else {
+            callsBaseContent
+                .searchable(
+                    text: $search,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search name or number")
+                )
+                .overlay { emptySearchOverlay }
+                .overlay { emptyRecentsOverlay }
+        }
     }
 
     private var callsBaseContent: some View {
