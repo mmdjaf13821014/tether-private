@@ -103,7 +103,7 @@ struct RecentsView: View {
             .overlay {
                 if model.data.recents.isEmpty { EmptyStateView("No recent calls", systemImage: "clock") }
             }
-            .navigationTitle("Recents")
+            .navigationTitle("Calls")
             .confirmationDialog(blocking.map { model.displayName($0) } ?? "",
                                 isPresented: Binding(get: { blocking != nil }, set: { if !$0 { blocking = nil } }), titleVisibility: .visible) {
                 if let n = blocking { Button("Block Contact", role: .destructive) { model.setBlocked(n, true) } }
