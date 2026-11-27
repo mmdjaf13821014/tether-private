@@ -42,6 +42,14 @@
 	<string>$(TETHER_COMM_NOTIFICATIONS)</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Tether connects to your Android phone over Bluetooth to bring its calls and messages to this iPhone.</string>
+	<key>NSAccessorySetupKitSupports</key>
+	<array>
+		<string>Bluetooth</string>
+	</array>
+	<key>NSAccessorySetupBluetoothServices</key>
+	<array>
+		<string>5ABF5C3C-2BF1-4B1C-9E8E-5D153F835BD5</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>The camera scans the pairing code shown on your Android phone.</string>
 	<key>NSMicrophoneUsageDescription</key>
