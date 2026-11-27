@@ -15,6 +15,7 @@ final class AppLaunchGate: ObservableObject {
 }
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
+    @available(iOS 18.0, *)
     private var accessorySession: ASAccessorySession?
     private var migrationPickerShown = false
     private var launchFinished = false
