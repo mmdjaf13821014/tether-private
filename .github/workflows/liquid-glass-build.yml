@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - liquid-glass-ios26
+      - feature/accessorysetupkit-forcequit
 
 permissions:
   contents: read
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: liquid-glass-ios26
+          ref: feature/accessorysetupkit-forcequit
 
       - name: Select Xcode 26.3 (iOS 26.2 SDK)
         run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
