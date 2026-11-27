@@ -1,3 +1,5 @@
+import AccessorySetupKit
+import CoreBluetooth
 import Intents
 import UserNotifications
 import Perception
@@ -5,7 +7,19 @@ import SwiftUI
 import TetherCore
 import UIKit
 
+@MainActor
+final class AppLaunchGate: ObservableObject {
+    static let shared = AppLaunchGate()
+    @Published private(set) var isReady = false
+    func open() { isReady = true }
+}
+
 final class AppDelegate: NSObject, UIApplicationDelegate {
+    private var accessorySession: ASAccessorySession?
+    private var migrationPickerShown = false
+    private var launchFinished = false
+    private let migrationKey = "app.tether.accessorySetup.migrated"
+
     /// The app is being terminated while it still ran (swiped away from the foreground or a running background):
     /// calls stop reaching this iPhone until it is opened again, so say so.
     func applicationWillTerminate(_ application: UIApplication) {
@@ -21,13 +35,64 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // Create the model (and with it the CBCentralManager) right away: when iOS relaunches us in the
-        // background for a Bluetooth event, state restoration needs the manager during launch.
         Notifications.shared.setUp()
-        MainActor.assumeIsolatedCompat {
-            _ = AppModel.shared.calls // CXProvider must exist before a call can be reported
+
+        // iOS 26 permits Bluetooth restoration after a user force-quit only for accessories authorized
+        // through AccessorySetupKit. Migrate the already-paired Android peripheral before creating
+        // AppModel/TetherLink, because constructing TetherLink initializes CBCentralManager.
+        let identity = KeychainIdentityStore()
+        guard #available(iOS 26.0, *),
+              !AppModel.runningTests, !AppModel.demoMode,
+              !UserDefaults.standard.bool(forKey: migrationKey),
+              identity.peerKey != nil,
+              let peripheralID = identity.peripheralID else {
+            finishLaunch()
+            return true
+        }
+
+        let session = ASAccessorySession()
+        accessorySession = session
+        session.activate(on: .main) { [weak self, weak session] event in
+            guard let self, let session else { return }
+            switch event.eventType {
+            case .activated:
+                guard !self.migrationPickerShown else { return }
+                self.migrationPickerShown = true
+                var descriptor = ASDiscoveryDescriptor()
+                descriptor.bluetoothServiceUUID = TetherUUID.service
+                let item = ASMigrationDisplayItem(
+                    name: identity.peerName ?? "Android phone",
+                    productImage: UIImage(systemName: "iphone") ?? UIImage(),
+                    descriptor: descriptor
+                )
+                item.peripheralIdentifier = peripheralID
+                session.showPicker(for: [item]) { [weak self] error in
+                    if let error {
+                        NSLog("[AccessorySetupKit] migration picker ended: %@", error.localizedDescription)
+                    }
+                    self?.finishLaunch(migrated: error == nil)
+                }
+            case .migrationComplete:
+                self.finishLaunch(migrated: true)
+            case .invalidated:
+                self.finishLaunch()
+            default:
+                break
+            }
         }
         return true
+    }
+
+    private func finishLaunch(migrated: Bool = false) {
+        DispatchQueue.main.async {
+            MainActor.assumeIsolatedCompat {
+                if migrated { UserDefaults.standard.set(true, forKey: self.migrationKey) }
+                guard !self.launchFinished else { return }
+                self.launchFinished = true
+                _ = AppModel.shared.calls // CXProvider must exist before a call can be reported.
+                AppLaunchGate.shared.open()
+            }
+        }
     }
 }
 
@@ -121,12 +186,14 @@ final class Router {
 @main
 struct TetherApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
+    @StateObject private var launchGate = AppLaunchGate.shared
     @Environment(\.scenePhase) private var phase
 
     var body: some Scene {
         WindowGroup {
-            // As the unit tests' host the app shows nothing: the tests drive the model, not the screens.
-            if AppModel.runningTests { Color.clear } else { content }
+            // Do not create AppModel (and CBCentralManager) until an existing BLE peripheral has
+            // completed AccessorySetupKit migration. Tests still drive the model without screens.
+            if AppModel.runningTests || !launchGate.isReady { Color.clear } else { content }
         }
     }
 
