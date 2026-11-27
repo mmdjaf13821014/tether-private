@@ -23,6 +23,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     /// The app is being terminated while it still ran (swiped away from the foreground or a running background):
     /// calls stop reaching this iPhone until it is opened again, so say so.
     func applicationWillTerminate(_ application: UIApplication) {
+        guard launchFinished else { return }
         MainActor.assumeIsolatedCompat {
             guard AppModel.shared.link.isPaired else { return }
             let c = UNMutableNotificationContent()
