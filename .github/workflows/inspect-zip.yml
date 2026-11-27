@@ -1,7 +1,7 @@
 name: Inspect uploaded design ZIP
 on:
-  push:
-    branches: [zip-import]
+  pull_request:
+    branches: [main]
     paths:
       - tether-design-changes.zip
       - .github/workflows/inspect-zip.yml
