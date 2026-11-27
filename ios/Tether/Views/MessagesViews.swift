@@ -3,6 +3,7 @@ import SwiftUI
 import TetherCore
 
 struct MessagesView: View {
+    // Native list editing, sender filters, and floating Liquid Glass compose/search controls.
     @Environment(\.appModel) private var model
     @Environment(\.router) private var router
     @State private var search = ""
