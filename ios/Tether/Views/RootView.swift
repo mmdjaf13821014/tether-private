@@ -5,6 +5,7 @@ import TetherCore
 struct RootView: View {
     @Environment(\.appModel) private var model
     @Environment(\.router) private var router
+    @AppStorage("tether.appearance") private var appearanceMode = "system"
 
     var body: some View { WithPerceptionTracking { bodyContent } }
 
@@ -14,7 +15,6 @@ struct RootView: View {
         VStack(spacing: 0) {
             ReturnToCallBanner()
             RemoteCallBanner()
-            if model.isPaired || router.tab != .link { StatusStrip() }
             TabView(selection: $router.tab) {
                 RecentsView()
                     .tabItem { Label("Recents", systemImage: "clock") }
@@ -34,6 +34,8 @@ struct RootView: View {
                     .tabItem { Label("Link", systemImage: "antenna.radiowaves.left.and.right") }
                     .tag(Router.Tab.link)
             }
+            // Keep the native iOS 26 tab bar visible so the system renders its Liquid Glass surface.
+            .toolbarBackground(.visible, for: .tabBar)
         }
         .overlay(alignment: .bottom) {
             if let err = model.lastError {
@@ -41,6 +43,7 @@ struct RootView: View {
                     .font(.footnote)
                     .padding(.horizontal, 14).padding(.vertical, 10)
                     .background(.thinMaterial, in: Capsule())
+                    .tetherLiquidGlass(cornerRadius: 24)
                     .padding(.bottom, 64)
                     .onTapGesture { model.lastError = nil }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -95,8 +98,8 @@ struct RootView: View {
             // Presented content does not always inherit environment objects: pass them explicitly.
             InCallView().environment(\.appModel, AppModel.shared).environment(\.router, Router.shared)
         }
-        .preferredColorScheme(.dark)
         .tint(Color("AccentColor"))
+        .preferredColorScheme(appearanceMode == "dark" ? .dark : (appearanceMode == "light" ? .light : nil))
         .task {
             if !model.isPaired { router.tab = .link }
         }
@@ -137,6 +140,7 @@ struct RemoteCallBanner: View {
 /// Thin strip at the top: link state, battery and carrier of the Android phone.
 struct StatusStrip: View {
     @Environment(\.appModel) private var model
+    @AppStorage("tether.appearance") private var appearanceMode = "system"
 
     var body: some View { WithPerceptionTracking { bodyContent } }
 
@@ -153,10 +157,27 @@ struct StatusStrip: View {
                 }
                 .foregroundStyle(s.battery <= 15 && !s.charging ? .red : .secondary)
             }
+            Menu {
+                Picker("Appearance", selection: $appearanceMode) {
+                    Label("System", systemImage: "iphone").tag("system")
+                    Label("Light", systemImage: "sun.max").tag("light")
+                    Label("Dark", systemImage: "moon").tag("dark")
+                }
+            } label: {
+                Image(systemName: appearanceMode == "dark" ? "moon.fill" : (appearanceMode == "light" ? "sun.max.fill" : "circle.lefthalf.filled"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color("AccentColor"))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Circle())
+            }
+            .accessibilityLabel("Appearance")
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 6)
-        .background(stripBackground)
+        .padding(.vertical, 8)
+        .background(stripBackground.opacity(0.48), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .tetherLiquidGlass(cornerRadius: 14)
+        .padding(.horizontal, 8)
+        .padding(.top, 4)
     }
 
     private var dotColor: Color {
@@ -233,27 +254,40 @@ struct Avatar: View {
     var photo: String? = nil
     var size: CGFloat = 40
 
+    /// Initials are shared by every avatar in the app; real contact photos always take precedence.
+    private var initials: String {
+        let words = name.split(whereSeparator: { $0.isWhitespace })
+        guard let first = words.first, let firstCharacter = first.first else { return "?" }
+        if words.count > 1, let lastCharacter = words.last?.first {
+            return String([firstCharacter, lastCharacter]).uppercased()
+        }
+        return String(firstCharacter).uppercased()
+    }
+
     var body: some View {
         Group {
             if let photo, let data = Data(base64Encoded: photo), let img = UIImage(data: data) {
                 Image(uiImage: img).resizable().scaledToFill()
             } else {
                 ZStack {
-                    LinearGradient(colors: [Color(red: 0.65, green: 0.67, blue: 0.72), Color(red: 0.52, green: 0.54, blue: 0.58)],   // theme: ok, Apple's contact-avatar grey
-                                   startPoint: .top, endPoint: .bottom)
-                    if let text = AvatarImage.initials(name) {
-                        Text(text).font(.system(size: size * 0.42, weight: .medium)).foregroundStyle(.white)
-                    } else {
-                        Image(systemName: "person.fill").font(.system(size: size * 0.5)).foregroundStyle(.white)
-                    }
+                    Circle().fill(LinearGradient(
+                        colors: [Color(red: 0.69, green: 0.76, blue: 0.89),
+                                 Color(red: 0.45, green: 0.48, blue: 0.73)],
+                        startPoint: .top, endPoint: .bottom))
+                    Text(initials)
+                        .font(.system(size: size * (initials.count > 1 ? 0.40 : 0.46),
+                                      weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
             }
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
+        .accessibilityLabel(Text(name))
     }
 }
-
 /// SIM choice for a call or a conversation.
 struct SimPicker: View {
     @Environment(\.appModel) private var model
@@ -278,7 +312,7 @@ struct SimPicker: View {
                     Text(label).font(.caption.weight(.medium))
                 }
                 .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(Color(.tertiarySystemFill), in: Capsule())
+                .tetherLiquidGlass(cornerRadius: 18)
             }
         }
     }
