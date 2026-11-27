@@ -7,6 +7,10 @@ on:
     branches:
       - feature/accessorysetupkit-forcequit
 
+concurrency:
+  group: accessorysetupkit-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
