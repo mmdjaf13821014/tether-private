@@ -168,8 +168,9 @@ struct ConversationRow: View {
             Circle()
                 .fill(conversation.unread > 0 ? Color.blue : Color.clear)
                 .frame(width: 7, height: 7)
-            Avatar(name: model.displayName(conversation.address),
-                   photo: model.photo(for: conversation.address), size: 44)
+            MessageAvatar(name: model.displayName(conversation.address),
+                          photo: model.photo(for: conversation.address),
+                          isKnown: model.name(for: conversation.address) != nil, size: 44)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 5) {
                     Text(model.displayName(conversation.address))
@@ -399,6 +400,36 @@ struct ThreadView: View {
 }
 
 
+/// Saved contacts use their photo or initials; unsaved numbers use the blue generic-person avatar.
+private struct MessageAvatar: View {
+    let name: String
+    let photo: String?
+    let isKnown: Bool
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if isKnown {
+                Avatar(name: name, photo: photo, size: size)
+            } else {
+                ZStack {
+                    Circle().fill(
+                        LinearGradient(colors: [Color(red: 0.24, green: 0.60, blue: 1.0),
+                                                Color(red: 0.08, green: 0.22, blue: 0.56)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    Image(systemName: "person.fill")
+                        .font(.system(size: size * 0.43, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.96))
+                }
+                .frame(width: size, height: size)
+                .clipShape(Circle())
+            }
+        }
+        .accessibilityLabel(Text(isKnown ? name : "Unknown number"))
+    }
+}
+
 /// Fixed, native-style conversation identity: the person stays visible while the transcript scrolls.
 private struct ThreadProfileHeader: View {
     let name: String
@@ -410,9 +441,7 @@ private struct ThreadProfileHeader: View {
     /// Raised compact identity header, anchored close to the navigation bar.
     var body: some View {
         VStack(spacing: 0) {
-            Avatar(name: isKnown ? name : number,
-                   photo: photo,
-                   size: avatarSize)
+            MessageAvatar(name: name, photo: photo, isKnown: isKnown, size: avatarSize)
 
             Text(isKnown ? name : number)
                 .font(.system(size: 17, weight: .semibold))
