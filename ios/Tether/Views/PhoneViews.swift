@@ -6,6 +6,7 @@ struct RecentsView: View {
     @Environment(\.appModel) private var model
     @State private var missedOnly = false
     @State private var search = ""
+    @State private var showSearch = false
     @State private var blocking: String?
     @State private var clearing = false
 
@@ -82,7 +83,7 @@ struct RecentsView: View {
             // Seen only while the user can see it: a call missed in the background keeps its badge.
             .onChangeCompat(of: model.data.recents.first?.id) { _ in if Router.shared.tab == .recents && model.appActive { model.markRecentsSeen() } }
             .onChangeCompat(of: model.appActive) { on in if on && Router.shared.tab == .recents { model.markRecentsSeen() } }
-            .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Search name or number"))
+            .searchable(text: $search, isPresented: $showSearch, placement: .navigationBarDrawer(displayMode: .automatic), prompt: Text("Search name or number"))
             .overlay {
                 if !search.isEmpty && entries.isEmpty { EmptyStateView(searchText: search) }
             }
@@ -107,7 +108,19 @@ struct RecentsView: View {
                     Button("Clear") { clearing = true }
                         .disabled(model.data.recents.isEmpty || !model.linkState.isConnected)
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    Button {
+                        showSearch = true
+                    } label: {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 34, height: 34)
+                            .background(.thinMaterial, in: Circle())
+                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.7))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Search Calls"))
+
                     Menu {
                         Picker("Show Calls", selection: $missedOnly) {
                             Text("All").tag(false)
@@ -115,6 +128,10 @@ struct RecentsView: View {
                         }
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 34, height: 34)
+                            .background(.thinMaterial, in: Circle())
+                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.7))
                     }
                     .accessibilityLabel(Text("Filter Calls"))
                 }
