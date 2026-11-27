@@ -11,117 +11,251 @@ struct MessagesView: View {
     @State private var composeTo = ""
     @State private var deleting: Conversation?
     @State private var blocking: String?
+    @State private var senderFilter: SenderFilter = .all
+    @State private var editMode: EditMode = .inactive
 
-    @ViewBuilder private func muteButton(_ c: Conversation) -> some View {
-        let muted = model.isMuted(c.thread)
-        Button { model.setMuted(c.thread, !muted) } label: {
+    private enum SenderFilter: String {
+        case all, known, unknown
+    }
+
+    private var filteredConversations: [Conversation] {
+        model.conversations.filter { conversation in
+            switch senderFilter {
+            case .all: true
+            case .known: model.name(for: conversation.address) != nil
+            case .unknown: model.name(for: conversation.address) == nil
+            }
+        }
+    }
+
+    var body: some View {
+        WithPerceptionTracking {
+            NavigationStack(path: $path) {
+                conversationList
+                    .listStyle(.plain)
+                    .overlay { emptyConversationOverlay }
+                    .safeAreaInset(edge: .bottom, spacing: 0) { floatingSearchAndCompose }
+                    .scrollDismissesKeyboard(.immediately)
+                    .refreshable { model.requestSync() }
+                    .navigationTitle("Messages")
+                    .environment(\.editMode, $editMode)
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbar { messagesToolbar }
+                    .navigationDestination(for: Int64.self) { ThreadView(thread: $0) }
+                    .sheet(isPresented: $composing, onDismiss: { composeTo = "" }) {
+                        ComposeView(initialTo: composeTo) { thread in
+                            composing = false
+                            if let thread { path = [thread] }
+                        }
+                        .environment(\.appModel, AppModel.shared)
+                        .environment(\.router, Router.shared)
+                    }
+                    .confirmationDialog(
+                        deleting.map { model.displayName($0.address) } ?? "",
+                        isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                        titleVisibility: .visible
+                    ) {
+                        if let conversation = deleting {
+                            Button("Delete Conversation", role: .destructive) {
+                                model.deleteConversation(conversation.thread)
+                            }
+                        }
+                    } message: {
+                        Text("This conversation will be deleted from your Android phone and all your devices.")
+                    }
+                    .confirmationDialog(
+                        blocking.map { model.displayName($0) } ?? "",
+                        isPresented: Binding(get: { blocking != nil }, set: { if !$0 { blocking = nil } }),
+                        titleVisibility: .visible
+                    ) {
+                        if let number = blocking {
+                            Button("Block Contact", role: .destructive) { model.setBlocked(number, true) }
+                        }
+                    } message: {
+                        Text("You will not receive phone calls or messages from people on the block list.")
+                    }
+                    .onChangeCompat(of: router.openThread) { thread in
+                        if let thread { path = [thread]; router.openThread = nil }
+                    }
+                    .onChangeCompat(of: router.composeTo) { number in
+                        guard let number else { return }
+                        router.composeTo = nil
+                        if let thread = model.thread(for: number) {
+                            path = [thread]
+                        } else {
+                            composeTo = number
+                            path = []
+                            composing = true
+                        }
+                    }
+                    .onAppear {
+                        if let thread = router.openThread { path = [thread]; router.openThread = nil }
+                        #if DEBUG
+                        if ProcessInfo.processInfo.arguments.contains("-TetherDemoCompose") { composing = true }
+                        #endif
+                    }
+            }
+            .animation(.easeInOut(duration: 0.18), value: path)
+        }
+    }
+
+    private var conversationList: some View {
+        List {
+            if search.isEmpty {
+                ForEach(filteredConversations) { conversation in
+                    NavigationLink(value: conversation.thread) {
+                        ConversationRow(conversation: conversation)
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) { deleting = conversation } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        muteButton(conversation).tint(.indigo)
+                    }
+                    .contextMenu { conversationMenu(conversation) }
+                }
+                .onDelete { offsets in
+                    if let i = offsets.first, filteredConversations.indices.contains(i) {
+                        deleting = filteredConversations[i]
+                    }
+                }
+            } else {
+                ForEach(searchHits) { message in
+                    NavigationLink(value: message.thread) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(model.displayName(message.addr))
+                                .font(.subheadline.weight(.semibold))
+                            Text(MessageText.plain(message.body))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+                    }
+                }
+                if searchHits.isEmpty {
+                    Text("No results").foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var messagesToolbar: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarLeading) {
+            Button(editMode.isEditing ? "Done" : "Edit") {
+                withAnimation { editMode = editMode.isEditing ? .inactive : .active }
+            }
+            .disabled(model.conversations.isEmpty)
+        }
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Menu {
+                Picker("Messages", selection: $senderFilter) {
+                    Text("All Messages").tag(SenderFilter.all)
+                    Text("Known Senders").tag(SenderFilter.known)
+                    Text("Unknown Senders").tag(SenderFilter.unknown)
+                }
+            } label: {
+                Image(systemName: "line.3.horizontal.decrease")
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(width: 34, height: 34)
+                    .background(.thinMaterial, in: Circle())
+            }
+            .accessibilityLabel(Text("Filter Messages"))
+        }
+    }
+
+    @ViewBuilder private var emptyConversationOverlay: some View {
+        if model.conversations.isEmpty && search.isEmpty {
+            EmptyStateView(
+                model.syncing ? "Syncing…" : "No messages",
+                systemImage: "message",
+                description: Text(model.isPaired ? "" : "Pair with your Android phone in the Link tab.")
+            )
+        } else if filteredConversations.isEmpty && search.isEmpty {
+            EmptyStateView(
+                senderFilter == .unknown ? "No unknown senders" : "No saved contacts",
+                systemImage: "person.crop.circle"
+            )
+        }
+    }
+
+    private var floatingSearchAndCompose: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 9) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.secondary)
+                TextField("Search", text: $search)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
+                if !search.isEmpty {
+                    Button { search = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 15)
+            .frame(height: 48)
+            .tetherLiquidGlass(cornerRadius: 25)
+
+            Button {
+                hideKeyboard()
+                composing = true
+            } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundStyle(Color("AccentColor"))
+                    .frame(width: 48, height: 48)
+                    .tetherLiquidGlassCircle()
+            }
+            .buttonStyle(.plain)
+            .disabled(!model.linkState.isConnected)
+            .accessibilityLabel(Text("New Message"))
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 8)
+        .padding(.bottom, 5)
+        .background(.ultraThinMaterial)
+    }
+
+    @ViewBuilder private func muteButton(_ conversation: Conversation) -> some View {
+        let muted = model.isMuted(conversation.thread)
+        Button { model.setMuted(conversation.thread, !muted) } label: {
             Label(muted ? "Show Alerts" : "Hide Alerts", systemImage: muted ? "bell" : "bell.slash")
         }
     }
 
-    @ViewBuilder private func conversationMenu(_ c: Conversation) -> some View {
-        muteButton(c)
-        if model.isBlocked(c.address) {
-            Button { model.setBlocked(c.address, false) } label: { Label("Unblock", systemImage: "hand.raised.slash") }
+    @ViewBuilder private func conversationMenu(_ conversation: Conversation) -> some View {
+        muteButton(conversation)
+        if model.isBlocked(conversation.address) {
+            Button { model.setBlocked(conversation.address, false) } label: {
+                Label("Unblock", systemImage: "hand.raised.slash")
+            }
         } else {
-            Button(role: .destructive) { blocking = c.address } label: { Label("Block", systemImage: "hand.raised") }
+            Button(role: .destructive) { blocking = conversation.address } label: {
+                Label("Block", systemImage: "hand.raised")
+            }
         }
-        Button(role: .destructive) { deleting = c } label: { Label("Delete", systemImage: "trash") }
-    }
-
-    var body: some View { WithPerceptionTracking { bodyContent } }
-
-    @ViewBuilder private var bodyContent: some View {
-        NavigationStack(path: $path) {
-            List {
-                if !search.isEmpty {
-                    let hits = searchHits
-                    if hits.isEmpty { Text("No results").foregroundStyle(.secondary) }
-                    ForEach(hits) { m in
-                        NavigationLink(value: m.thread) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(model.displayName(m.addr)).font(.subheadline.weight(.semibold))
-                                Text(MessageText.plain(m.body)).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
-                            }
-                        }
-                    }
-                } else {
-                    ForEach(model.conversations) { c in
-                        NavigationLink(value: c.thread) { ConversationRow(conversation: c) }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) { deleting = c } label: { Label("Delete", systemImage: "trash") }
-                                muteButton(c).tint(.indigo)
-                            }
-                            .contextMenu { conversationMenu(c) }
-                    }
-                }
-            }
-            .listStyle(.plain)
-            .overlay {
-                if model.conversations.isEmpty && search.isEmpty {
-                    EmptyStateView(model.syncing ? "Syncing…" : "No messages",
-                                           systemImage: "message",
-                                           description: Text(model.isPaired ? "" : "Pair with your Android phone in the Link tab."))
-                }
-            }
-            .confirmationDialog(deleting.map { model.displayName($0.address) } ?? "",
-                                isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
-                if let c = deleting {
-                    Button("Delete Conversation", role: .destructive) { model.deleteConversation(c.thread) }
-                }
-            } message: {
-                Text("This conversation will be deleted from your Android phone and all your devices.")
-            }
-            .confirmationDialog(blocking.map { model.displayName($0) } ?? "",
-                                isPresented: Binding(get: { blocking != nil }, set: { if !$0 { blocking = nil } }), titleVisibility: .visible) {
-                if let n = blocking {
-                    Button("Block Contact", role: .destructive) { model.setBlocked(n, true) }
-                }
-            } message: {
-                Text("You will not receive phone calls or messages from people on the block list.")
-            }
-            .searchable(text: $search, prompt: Text("Search messages"))
-            .scrollDismissesKeyboard(.immediately)
-            .refreshable { model.requestSync() }
-            .navigationTitle("Messages")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { hideKeyboard(); composing = true } label: { Image(systemName: "square.and.pencil") }
-                        .disabled(!model.linkState.isConnected)
-                }
-            }
-            .navigationDestination(for: Int64.self) { ThreadView(thread: $0) }
-            .sheet(isPresented: $composing, onDismiss: { composeTo = "" }) {
-                ComposeView(initialTo: composeTo) { thread in
-                    composing = false
-                    if let thread { path = [thread] }
-                }
-                .environment(\.appModel, AppModel.shared).environment(\.router, Router.shared)
-            }
-            .onChangeCompat(of: router.openThread) { t in
-                if let t { path = [t]; router.openThread = nil }
-            }
-            // "Send message" on a number inside a bubble: its conversation, or a new one.
-            .onChangeCompat(of: router.composeTo) { n in
-                guard let n else { return }
-                router.composeTo = nil
-                if let t = model.thread(for: n) { path = [t] } else { composeTo = n; path = []; composing = true }
-            }
-            // A notification tapped before this tab was ever shown sets the thread before we exist.
-            .onAppear {
-                if let t = router.openThread { path = [t]; router.openThread = nil }
-                #if DEBUG
-                if ProcessInfo.processInfo.arguments.contains("-TetherDemoCompose") { composing = true }   // keyboard screenshots
-                #endif
-            }
+        Button(role: .destructive) { deleting = conversation } label: {
+            Label("Delete", systemImage: "trash")
         }
     }
 
     private var searchHits: [Sms] {
-        let q = search.lowercased()
-        _ = q
-        return model.data.sms.filter { SearchText.matches(search, names: [$0.body, model.name(for: $0.addr) ?? ""], numbers: [$0.addr]) }
-            .sorted { $0.date > $1.date }.prefix(200).map { $0 }
+        model.data.sms
+            .filter {
+                SearchText.matches(
+                    search,
+                    names: [$0.body, model.name(for: $0.addr) ?? ""],
+                    numbers: [$0.addr]
+                )
+            }
+            .sorted { $0.date > $1.date }
+            .prefix(200)
+            .map { $0 }
     }
 }
 
@@ -132,34 +266,43 @@ struct ConversationRow: View {
     var body: some View { WithPerceptionTracking { bodyContent } }
 
     @ViewBuilder private var bodyContent: some View {
-        HStack(spacing: 10) {
-            // Unread marker, where Messages puts it.
-            Circle().fill(conversation.unread > 0 ? Color.blue : Color.clear).frame(width: 10, height: 10)
-            Avatar(name: model.displayName(conversation.address), photo: model.photo(for: conversation.address), size: 46)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(model.displayName(conversation.address)).font(.body.weight(.semibold)).lineLimit(1)
+        HStack(spacing: 9) {
+            Circle()
+                .fill(conversation.unread > 0 ? Color.blue : Color.clear)
+                .frame(width: 7, height: 7)
+            MessageAvatar(name: model.displayName(conversation.address),
+                          photo: model.photo(for: conversation.address),
+                          isKnown: model.name(for: conversation.address) != nil, size: 44)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    Text(model.displayName(conversation.address))
+                        .font(.body.weight(.semibold))
+                        .lineLimit(1)
                     if model.isMuted(conversation.thread) {
-                        Image(systemName: "moon.fill").font(.caption).foregroundStyle(.secondary)
+                        Image(systemName: "moon.fill").font(.caption2).foregroundStyle(.secondary)
                             .accessibilityLabel(Text("Alerts hidden"))
                     }
                     if model.isBlocked(conversation.address) {
-                        Image(systemName: "hand.raised.fill").font(.caption).foregroundStyle(.secondary)
+                        Image(systemName: "hand.raised.fill").font(.caption2).foregroundStyle(.secondary)
                             .accessibilityLabel(Text("Blocked"))
                     }
-                    Spacer()
-                    Text(shortTime(conversation.last.date)).font(.subheadline).foregroundStyle(.secondary)
+                    Spacer(minLength: 4)
+                    Text(shortTime(conversation.last.date))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
                 }
-                Text(MessageText.plain(conversation.last.body)).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
-                    .frame(maxWidth: .infinity, minHeight: 36, alignment: .topLeading)
-                if let sim = model.simName(conversation.last.sub) {
-                    Label(sim, systemImage: "simcard").font(.caption2).foregroundStyle(.secondary).labelStyle(.titleAndIcon)
-                }
+                Text(MessageText.plain(conversation.last.body))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
             }
         }
-        .padding(.vertical, 2)
-        .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 14))
-        .alignmentGuide(.listRowSeparatorLeading) { _ in 76 }
+        .padding(.vertical, 5)
+        .contentShape(Rectangle())
+        .listRowInsets(EdgeInsets(top: 7, leading: 10, bottom: 7, trailing: 14))
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 70 }
     }
 }
 
@@ -192,16 +335,14 @@ struct ThreadView: View {
             let prev = i > 0 ? msgs[i - 1] : nil
             let next = i + 1 < msgs.count ? msgs[i + 1] : nil
             let gap: Int64 = 15 * 60_000
-            // With two SIMs the line above a run says which SIM it is on, and a change of SIM starts a new run.
-            let sim = model.simName(m.sub)
-            let simChanged = sim != nil && prev != nil && prev!.sub != m.sub
-            let header = (prev == nil || m.date - prev!.date > gap || simChanged)
-                ? transcriptTime(m.date) + (sim.map { " · \($0)" } ?? "") : nil
+            // Keep carrier / SIM metadata out of the transcript, matching the compact native Messages layout.
+            let header = (prev == nil || m.date - prev!.date > gap)
+                ? transcriptTime(m.date) : nil
             let tail = next == nil || next!.incoming != m.incoming || next!.date - m.date > gap
             var status: String?
             if m.box == 5 { status = String(localized: "Not Delivered") }
             else if m.box == 4 || m.box == 6 { status = String(localized: "Sending…") }
-            else if m.id == lastMine && !m.incoming { status = String(localized: "Sent as Text Message") }
+
             out.append(Row(message: m, header: header, tail: tail, status: status, failed: m.box == 5))
         }
         return out
@@ -218,10 +359,10 @@ struct ThreadView: View {
                     ForEach(rows(msgs)) { r in
                         if let h = r.header {
                             Text(h).font(.caption2.weight(.medium)).foregroundStyle(.secondary)
-                                .padding(.top, 14).padding(.bottom, 6)
+                                .padding(.top, 8).padding(.bottom, 4)
                         }
                         Bubble(message: r.message, tail: r.tail)
-                            .padding(.bottom, r.tail ? 8 : 2)
+                            .padding(.bottom, r.tail ? 4 : 0)
                             .id(r.message.id)
                         if let st = r.status {
                             Text(st).font(.caption2.weight(r.failed ? .semibold : .regular))
@@ -240,18 +381,20 @@ struct ThreadView: View {
                 if model.appActive { model.markRead(thread: thread) }
             }
         }
+        // Keep the conversation identity fixed above the transcript, like iOS Messages.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            ThreadProfileHeader(
+                name: name,
+                number: model.formatted(address),
+                photo: model.photo(for: address),
+                isKnown: model.name(for: address) != nil
+            )
+        }
         .safeAreaInset(edge: .bottom) { composer }
         // Like Messages: no tab bar inside a conversation (it sat under the composer and the keyboard).
         .toolbar(.hidden, for: .tabBar)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack(spacing: 1) {
-                    Avatar(name: name, photo: model.photo(for: address), size: 26)
-                    Text(name).font(.caption2).lineLimit(1)
-                }
-                .accessibilityElement(children: .combine)
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { model.dial(address, sub: sub) } label: { Image(systemName: "phone") }
                     .disabled(!model.linkState.isConnected || address.isEmpty)
@@ -307,13 +450,34 @@ struct ThreadView: View {
 
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            SimPicker(sub: Binding(get: { sub }, set: { sub = $0; model.setPreferredSim($0, for: address) }))
-                .padding(.bottom, 3)
+            // Like the Messages "+" control: SIM selection is a separate circular action.
+            Menu {
+                ForEach(model.sims) { sim in
+                    Button {
+                        sub = sim.sub
+                        model.setPreferredSim(sim.sub, for: address)
+                    } label: {
+                        Label("\(sim.name) · \(sim.carrier)",
+                              systemImage: sub == sim.sub ? "checkmark.circle.fill" : "simcard")
+                    }
+                }
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 21, weight: .medium))
+                    .frame(width: 42, height: 42)
+                    .contentShape(Circle())
+                    .tetherLiquidGlassCircle()
+            }
+            .accessibilityLabel(Text("Choose SIM"))
+            .padding(.bottom, 2)
+
             HStack(alignment: .bottom, spacing: 4) {
                 TextField("Text Message · SMS", text: $text, axis: .vertical)
                     .lineLimit(1...6)
                     .focused($focused)
-                    .padding(.leading, 12).padding(.vertical, 7)
+                    .textFieldStyle(.plain)
+                    .tint(Color("AccentColor"))
+                    .padding(.leading, 12).padding(.vertical, 8)
                 Button {
                     model.sendSms(to: address, body: text, sub: sub)
                     text = ""
@@ -326,13 +490,81 @@ struct ThreadView: View {
                 .padding(.trailing, 3).padding(.bottom, 3)
                 .accessibilityLabel(Text("Send"))
             }
-            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color(.separator), lineWidth: 1))
+            .padding(.leading, 2)
+            .padding(.trailing, 3)
+            .padding(.vertical, 3)
+            .tetherLiquidGlass(cornerRadius: 25)
         }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(.bar)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .padding(.bottom, 4)
     }
 }
 
+
+/// Saved contacts use their photo or initials; unsaved numbers use the blue generic-person avatar.
+private struct MessageAvatar: View {
+    let name: String
+    let photo: String?
+    let isKnown: Bool
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if isKnown {
+                Avatar(name: name, photo: photo, size: size)
+            } else {
+                ZStack {
+                    Circle().fill(
+                        LinearGradient(colors: [Color(red: 0.24, green: 0.60, blue: 1.0),
+                                                Color(red: 0.08, green: 0.22, blue: 0.56)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    Image(systemName: "person.fill")
+                        .font(.system(size: size * 0.43, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.96))
+                }
+                .frame(width: size, height: size)
+                .clipShape(Circle())
+            }
+        }
+        .accessibilityLabel(Text(isKnown ? name : "Unknown number"))
+    }
+}
+
+/// Fixed, native-style conversation identity: the person stays visible while the transcript scrolls.
+private struct ThreadProfileHeader: View {
+    let name: String
+    let number: String
+    let photo: String?
+    let isKnown: Bool
+    private let avatarSize: CGFloat = 68
+
+    /// Raised compact identity header, anchored close to the navigation bar.
+    var body: some View {
+        VStack(spacing: 0) {
+            MessageAvatar(name: name, photo: photo, isKnown: isKnown, size: avatarSize)
+
+            HStack(spacing: 6) {
+                Text(isKnown ? name : number)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .tetherLiquidGlass(cornerRadius: 20)
+            .fixedSize(horizontal: true, vertical: false)
+        }
+        .padding(.top, -25)
+        .frame(maxWidth: .infinity, alignment: .top)
+        .frame(height: 80, alignment: .top)
+    }
+}
 /// "Today 13:20" / "Yesterday 09:05" / "Mon 13:20" / "12 Nov 2026 at 13:20", as Messages writes it.
 func transcriptTime(_ ms: Int64) -> String {
     let d = Date(millis: ms)
