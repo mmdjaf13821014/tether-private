@@ -18,21 +18,35 @@ struct ContactsView: View {
                         ForEach(model.favourites) { c in FavouriteRow(contact: c) }
                     }
                 }
-                Section(search.isEmpty && !model.favourites.isEmpty ? "All Contacts" : "") {
-                    ForEach(filtered) { c in
-                        NavigationLink {
-                            ContactDetailView(contact: c)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Avatar(name: c.name, photo: c.photo, size: 36)
-                                Text(c.name)
-                                if c.starred { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.yellow) }
+                ForEach(groupedContacts, id: \.letter) { group in
+                    Section {
+                        ForEach(group.contacts) { c in
+                            NavigationLink {
+                                ContactDetailView(contact: c)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Avatar(name: c.name, photo: model.photo(for: c), size: 36)
+                                    contactName(c.name).lineLimit(1)
+                                    if c.starred {
+                                        Image(systemName: "star.fill")
+                                            .font(.caption2)
+                                            .foregroundStyle(.yellow)
+                                    }
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(.vertical, 2)
+                                .contentShape(Rectangle())
                             }
                         }
+                    } header: {
+                        Text(group.letter)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
             .listStyle(.plain)
+            .alignmentGuide(.listRowSeparatorLeading) { _ in 66 }
             .overlay {
                 if model.data.contacts.isEmpty { EmptyStateView("No contacts", systemImage: "person.crop.circle") }
             }
@@ -47,6 +61,29 @@ struct ContactsView: View {
             }
             .sheet(isPresented: $adding) { AddContactView().environment(\.appModel, AppModel.shared).environment(\.router, Router.shared) }
         }
+    }
+
+    /// "Ali Amini": given names regular, family name (last word) semibold.
+    private func contactName(_ full: String) -> Text {
+        let parts = full.split(separator: " ", omittingEmptySubsequences: true)
+        guard parts.count > 1, let last = parts.last else { return Text(full).font(.body) }
+        let first = parts.dropLast().joined(separator: " ")
+        return Text(first + " ").font(.body) + Text(String(last)).font(.body.weight(.semibold))
+    }
+
+    private var groupedContacts: [(letter: String, contacts: [Contact])] {
+        let sorted = filtered.sorted {
+            $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
+        let groups = Dictionary(grouping: sorted) { contact -> String in
+            let first = String(contact.name.prefix(1)).uppercased()
+            return first.rangeOfCharacter(from: .letters) == nil ? "#" : first
+        }
+        return groups.keys.sorted {
+            if $0 == "#" { return false }
+            if $1 == "#" { return true }
+            return $0.localizedStandardCompare($1) == .orderedAscending
+        }.map { (letter: $0, contacts: groups[$0] ?? []) }
     }
 
     private var filtered: [Contact] {
@@ -66,7 +103,7 @@ struct FavouriteRow: View {
 
     @ViewBuilder private var bodyContent: some View {
         HStack(spacing: 12) {
-            Avatar(name: contact.name, photo: contact.photo, size: 36)
+            Avatar(name: contact.name, photo: model.photo(for: contact), size: 36)
             VStack(alignment: .leading, spacing: 1) {
                 Text(contact.name)
                 if let p = contact.phones.first {
@@ -103,7 +140,7 @@ struct ContactDetailView: View {
         List {
             Section {
                 VStack(spacing: 10) {
-                    Avatar(name: contact.name, photo: contact.photo, size: 96)
+                    Avatar(name: contact.name, photo: model.photo(for: contact), size: 96)
                     Text(contact.name).font(.title2.weight(.semibold))
                 }
                 .frame(maxWidth: .infinity)
@@ -253,7 +290,7 @@ struct EditContactView: View {
         NavigationStack {
             Form {
                 Section {
-                    HStack { Spacer(); Avatar(name: name.isEmpty ? contact.name : name, photo: contact.photo, size: 80); Spacer() }
+                    HStack { Spacer(); Avatar(name: name.isEmpty ? contact.name : name, photo: model.photo(for: contact), size: 80); Spacer() }
                         .listRowBackground(Color.clear)
                     TextField("Name", text: $name)
                 }
