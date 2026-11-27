@@ -27,133 +27,222 @@ struct MessagesView: View {
         }
     }
 
-    @ViewBuilder private func muteButton(_ c: Conversation) -> some View {
-        let muted = model.isMuted(c.thread)
-        Button { model.setMuted(c.thread, !muted) } label: {
+    var body: some View {
+        WithPerceptionTracking {
+            NavigationStack(path: $path) {
+                conversationList
+                    .listStyle(.plain)
+                    .overlay { emptyConversationOverlay }
+                    .safeAreaInset(edge: .bottom, spacing: 0) { floatingSearchAndCompose }
+                    .scrollDismissesKeyboard(.immediately)
+                    .refreshable { model.requestSync() }
+                    .navigationTitle("Messages")
+                    .toolbarBackground(.visible, for: .navigationBar)
+                    .toolbar { messagesToolbar }
+                    .navigationDestination(for: Int64.self) { ThreadView(thread: $0) }
+                    .sheet(isPresented: $composing, onDismiss: { composeTo = "" }) {
+                        ComposeView(initialTo: composeTo) { thread in
+                            composing = false
+                            if let thread { path = [thread] }
+                        }
+                        .environment(\.appModel, AppModel.shared)
+                        .environment(\.router, Router.shared)
+                    }
+                    .confirmationDialog(
+                        deleting.map { model.displayName($0.address) } ?? "",
+                        isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                        titleVisibility: .visible
+                    ) {
+                        if let conversation = deleting {
+                            Button("Delete Conversation", role: .destructive) {
+                                model.deleteConversation(conversation.thread)
+                            }
+                        }
+                    } message: {
+                        Text("This conversation will be deleted from your Android phone and all your devices.")
+                    }
+                    .confirmationDialog(
+                        blocking.map { model.displayName($0) } ?? "",
+                        isPresented: Binding(get: { blocking != nil }, set: { if !$0 { blocking = nil } }),
+                        titleVisibility: .visible
+                    ) {
+                        if let number = blocking {
+                            Button("Block Contact", role: .destructive) { model.setBlocked(number, true) }
+                        }
+                    } message: {
+                        Text("You will not receive phone calls or messages from people on the block list.")
+                    }
+                    .onChangeCompat(of: router.openThread) { thread in
+                        if let thread { path = [thread]; router.openThread = nil }
+                    }
+                    .onChangeCompat(of: router.composeTo) { number in
+                        guard let number else { return }
+                        router.composeTo = nil
+                        if let thread = model.thread(for: number) {
+                            path = [thread]
+                        } else {
+                            composeTo = number
+                            path = []
+                            composing = true
+                        }
+                    }
+                    .onAppear {
+                        if let thread = router.openThread { path = [thread]; router.openThread = nil }
+                        #if DEBUG
+                        if ProcessInfo.processInfo.arguments.contains("-TetherDemoCompose") { composing = true }
+                        #endif
+                    }
+            }
+            .animation(.easeInOut(duration: 0.18), value: path)
+        }
+    }
+
+    private var conversationList: some View {
+        List {
+            if search.isEmpty {
+                ForEach(filteredConversations) { conversation in
+                    NavigationLink(value: conversation.thread) {
+                        ConversationRow(conversation: conversation)
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) { deleting = conversation } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        muteButton(conversation).tint(.indigo)
+                    }
+                    .contextMenu { conversationMenu(conversation) }
+                }
+            } else {
+                ForEach(searchHits) { message in
+                    NavigationLink(value: message.thread) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(model.displayName(message.addr))
+                                .font(.subheadline.weight(.semibold))
+                            Text(MessageText.plain(message.body))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+                    }
+                }
+                if searchHits.isEmpty {
+                    Text("No results").foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var messagesToolbar: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarLeading) {
+            Menu {
+                Picker("Messages", selection: $senderFilter) {
+                    Text("All Messages").tag(SenderFilter.all)
+                    Text("Known Senders").tag(SenderFilter.known)
+                    Text("Unknown Senders").tag(SenderFilter.unknown)
+                }
+            } label: {
+                Image(systemName: "line.3.horizontal.decrease")
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(width: 34, height: 34)
+                    .background(.thinMaterial, in: Circle())
+            }
+            .accessibilityLabel(Text("Filter Messages"))
+        }
+    }
+
+    @ViewBuilder private var emptyConversationOverlay: some View {
+        if model.conversations.isEmpty && search.isEmpty {
+            EmptyStateView(
+                model.syncing ? "Syncing…" : "No messages",
+                systemImage: "message",
+                description: Text(model.isPaired ? "" : "Pair with your Android phone in the Link tab.")
+            )
+        } else if filteredConversations.isEmpty && search.isEmpty {
+            EmptyStateView(
+                senderFilter == .unknown ? "No unknown senders" : "No saved contacts",
+                systemImage: "person.crop.circle"
+            )
+        }
+    }
+
+    private var floatingSearchAndCompose: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 9) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.secondary)
+                TextField("Search", text: $search)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
+                if !search.isEmpty {
+                    Button { search = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 15)
+            .frame(height: 48)
+            .tetherLiquidGlass(cornerRadius: 25)
+
+            Button {
+                hideKeyboard()
+                composing = true
+            } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundStyle(Color("AccentColor"))
+                    .frame(width: 48, height: 48)
+                    .tetherLiquidGlassCircle()
+            }
+            .buttonStyle(.plain)
+            .disabled(!model.linkState.isConnected)
+            .accessibilityLabel(Text("New Message"))
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 8)
+        .padding(.bottom, 5)
+        .background(.ultraThinMaterial)
+    }
+
+    @ViewBuilder private func muteButton(_ conversation: Conversation) -> some View {
+        let muted = model.isMuted(conversation.thread)
+        Button { model.setMuted(conversation.thread, !muted) } label: {
             Label(muted ? "Show Alerts" : "Hide Alerts", systemImage: muted ? "bell" : "bell.slash")
         }
     }
 
-    @ViewBuilder private func conversationMenu(_ c: Conversation) -> some View {
-        muteButton(c)
-        if model.isBlocked(c.address) {
-            Button { model.setBlocked(c.address, false) } label: { Label("Unblock", systemImage: "hand.raised.slash") }
+    @ViewBuilder private func conversationMenu(_ conversation: Conversation) -> some View {
+        muteButton(conversation)
+        if model.isBlocked(conversation.address) {
+            Button { model.setBlocked(conversation.address, false) } label: {
+                Label("Unblock", systemImage: "hand.raised.slash")
+            }
         } else {
-            Button(role: .destructive) { blocking = c.address } label: { Label("Block", systemImage: "hand.raised") }
-        }
-        Button(role: .destructive) { deleting = c } label: { Label("Delete", systemImage: "trash") }
-    }
-
-    var body: some View { WithPerceptionTracking { bodyContent } }
-
-    @ViewBuilder private var bodyContent: some View {
-        NavigationStack(path: $path) {
-            List {
-                if !search.isEmpty {
-                    let hits = searchHits
-                    if hits.isEmpty { Text("No results").foregroundStyle(.secondary) }
-                    ForEach(hits) { m in
-                        NavigationLink(value: m.thread) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(model.displayName(m.addr)).font(.subheadline.weight(.semibold))
-                                Text(MessageText.plain(m.body)).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
-                            }
-                        }
-                    }
-                } else {
-                    ForEach(filteredConversations) { c in
-                        NavigationLink(value: c.thread) { ConversationRow(conversation: c) }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) { deleting = c } label: { Label("Delete", systemImage: "trash") }
-                                muteButton(c).tint(.indigo)
-                            }
-                            .contextMenu { conversationMenu(c) }
-                    }
-                }
-            }
-            .listStyle(.plain)
-            .overlay {
-                if model.conversations.isEmpty && search.isEmpty {
-                    EmptyStateView(model.syncing ? "Syncing…" : "No messages",
-                                           systemImage: "message",
-                                           description: Text(model.isPaired ? "" : "Pair with your Android phone in the Link tab."))
-                } else if filteredConversations.isEmpty && search.isEmpty {
-                    EmptyStateView(senderFilter == .unknown ? "No unknown senders" : "No saved contacts",
-                                   systemImage: "person.crop.circle")
-                }
-            }
-            .confirmationDialog(deleting.map { model.displayName($0.address) } ?? "",
-                                isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
-                if let c = deleting {
-                    Button("Delete Conversation", role: .destructive) { model.deleteConversation(c.thread) }
-                }
-            } message: {
-                Text("This conversation will be deleted from your Android phone and all your devices.")
-            }
-            .confirmationDialog(blocking.map { model.displayName($0) } ?? "",
-                                isPresented: Binding(get: { blocking != nil }, set: { if !$0 { blocking = nil } }), titleVisibility: .visible) {
-                if let n = blocking {
-                    Button("Block Contact", role: .destructive) { model.setBlocked(n, true) }
-                }
-            } message: {
-                Text("You will not receive phone calls or messages from people on the block list.")
-            }
-            .searchable(text: $search, prompt: Text("Search messages"))
-            .scrollDismissesKeyboard(.immediately)
-            .refreshable { model.requestSync() }
-            .navigationTitle("Messages")
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Menu {
-                        Picker("Messages", selection: $senderFilter) {
-                            Text("All Messages").tag(SenderFilter.all)
-                            Text("Known Senders").tag(SenderFilter.known)
-                            Text("Unknown Senders").tag(SenderFilter.unknown)
-                        }
-                    } label: {
-                        Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { hideKeyboard(); composing = true } label: { Image(systemName: "square.and.pencil") }
-                        .disabled(!model.linkState.isConnected)
-                }
-            }
-            .navigationDestination(for: Int64.self) { ThreadView(thread: $0) }
-            .sheet(isPresented: $composing, onDismiss: { composeTo = "" }) {
-                ComposeView(initialTo: composeTo) { thread in
-                    composing = false
-                    if let thread { path = [thread] }
-                }
-                .environment(\.appModel, AppModel.shared).environment(\.router, Router.shared)
-            }
-            .onChangeCompat(of: router.openThread) { t in
-                if let t { path = [t]; router.openThread = nil }
-            }
-            // "Send message" on a number inside a bubble: its conversation, or a new one.
-            .onChangeCompat(of: router.composeTo) { n in
-                guard let n else { return }
-                router.composeTo = nil
-                if let t = model.thread(for: n) { path = [t] } else { composeTo = n; path = []; composing = true }
-            }
-            // A notification tapped before this tab was ever shown sets the thread before we exist.
-            .onAppear {
-                if let t = router.openThread { path = [t]; router.openThread = nil }
-                #if DEBUG
-                if ProcessInfo.processInfo.arguments.contains("-TetherDemoCompose") { composing = true }   // keyboard screenshots
-                #endif
+            Button(role: .destructive) { blocking = conversation.address } label: {
+                Label("Block", systemImage: "hand.raised")
             }
         }
-        // Keep the push/pop motion short and consistent; the tab bar is explicitly restored on the root.
-        .animation(.easeInOut(duration: 0.18), value: path)
+        Button(role: .destructive) { deleting = conversation } label: {
+            Label("Delete", systemImage: "trash")
+        }
     }
 
     private var searchHits: [Sms] {
-        let q = search.lowercased()
-        _ = q
-        return model.data.sms.filter { SearchText.matches(search, names: [$0.body, model.name(for: $0.addr) ?? ""], numbers: [$0.addr]) }
-            .sorted { $0.date > $1.date }.prefix(200).map { $0 }
+        model.data.sms
+            .filter {
+                SearchText.matches(
+                    search,
+                    names: [$0.body, model.name(for: $0.addr) ?? ""],
+                    numbers: [$0.addr]
+                )
+            }
+            .sorted { $0.date > $1.date }
+            .prefix(200)
+            .map { $0 }
     }
 }
 
@@ -443,15 +532,20 @@ private struct ThreadProfileHeader: View {
         VStack(spacing: 0) {
             MessageAvatar(name: name, photo: photo, isKnown: isKnown, size: avatarSize)
 
-            Text(isKnown ? name : number)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 5)
-                .tetherLiquidGlass(cornerRadius: 20)
-                .fixedSize(horizontal: true, vertical: false)
+            HStack(spacing: 6) {
+                Text(isKnown ? name : number)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .tetherLiquidGlass(cornerRadius: 20)
+            .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.top, -25)
         .frame(maxWidth: .infinity, alignment: .top)

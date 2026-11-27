@@ -102,7 +102,16 @@ final class AppModel {
     var syncing = false
     var openThread: Int64?
     /// Scene is in the foreground (an open thread in a backgrounded app must still notify).
-    var appActive = true { didSet { if appActive != oldValue { AppEvents.shared.add(appActive ? "app active" : "app inactive") }; if appActive && !oldValue { link.appBecameActive() } } }
+    var appActive = true {
+        didSet {
+            if appActive != oldValue {
+                AppEvents.shared.add(appActive ? "app active" : "app inactive")
+                // Flush the locally cached contacts, messages and call history before iOS suspends the process.
+                if !appActive { persistNow() }
+            }
+            if appActive && !oldValue { link.appBecameActive() }
+        }
+    }
     #if DEBUG
     /// Calls the -TetherAutoHangup debug option already scheduled to end.
     @PerceptionIgnored var autoHangupArmed = Set<String>()
