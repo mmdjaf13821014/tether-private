@@ -21,44 +21,81 @@ struct RecentsView: View {
 
     var body: some View {
         WithPerceptionTracking {
-            NavigationStack {
-                callsList
-                    .listStyle(.plain)
-                    .safeAreaInset(edge: .top, spacing: 8) { favouritesStrip }
-                    .scrollDismissesKeyboard(.immediately)
-                    .refreshable { model.requestSync() }
-                    .searchable(
-                        text: $search,
-                        isPresented: $showSearch,
-                        placement: .navigationBarDrawer(displayMode: .automatic),
-                        prompt: Text("Search name or number")
-                    )
-                    .overlay { emptySearchOverlay }
-                    .overlay { emptyRecentsOverlay }
-                    .onAppear { model.markRecentsSeen() }
-                    .onChangeCompat(of: model.data.recents.first?.id) { _ in
-                        if Router.shared.tab == .recents && model.appActive { model.markRecentsSeen() }
-                    }
-                    .onChangeCompat(of: model.appActive) { active in
-                        if active && Router.shared.tab == .recents { model.markRecentsSeen() }
-                    }
-                    .navigationTitle("Calls")
-                    .environment(\.editMode, $editMode)
-                    .confirmationDialog(
-                        blocking.map { model.displayName($0) } ?? "",
-                        isPresented: Binding(get: { blocking != nil }, set: { if !$0 { blocking = nil } }),
-                        titleVisibility: .visible
-                    ) {
-                        if let number = blocking {
-                            Button("Block Contact", role: .destructive) { model.setBlocked(number, true) }
-                        }
-                    } message: {
-                        Text("You will not receive phone calls or messages from people on the block list.")
-                    }
-                    .toolbarBackground(.visible, for: .navigationBar)
-                    .toolbar { callsToolbar }
-            }
+            callsNavigationStack
         }
+    }
+
+    private var callsNavigationStack: some View {
+        NavigationStack {
+            callsScreen
+        }
+    }
+
+    private var callsScreen: some View {
+        callsPresentedContent
+            .navigationTitle("Calls")
+            .environment(\.editMode, $editMode)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar { callsToolbar }
+    }
+
+    private var callsPresentedContent: some View {
+        callsLifecycleContent
+            .confirmationDialog(
+                blocking.map { model.displayName($0) } ?? "",
+                isPresented: Binding(
+                    get: { blocking != nil },
+                    set: { if !$0 { blocking = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                if let number = blocking {
+                    Button("Block Contact", role: .destructive) {
+                        model.setBlocked(number, true)
+                    }
+                }
+            } message: {
+                Text("You will not receive phone calls or messages from people on the block list.")
+            }
+    }
+
+    private var callsLifecycleContent: some View {
+        callsSearchContent
+            .onAppear { model.markRecentsSeen() }
+            .onChangeCompat(of: model.data.recents.first?.id) { _ in
+                if Router.shared.tab == .recents && model.appActive {
+                    model.markRecentsSeen()
+                }
+            }
+            .onChangeCompat(of: model.appActive) { active in
+                if active && Router.shared.tab == .recents {
+                    model.markRecentsSeen()
+                }
+            }
+    }
+
+    private var callsSearchContent: some View {
+        callsBaseContent
+            .searchable(
+                text: $search,
+                isPresented: $showSearch,
+                placement: .navigationBarDrawer(displayMode: .automatic),
+                prompt: Text("Search name or number")
+            )
+            .overlay { emptySearchOverlay }
+            .overlay { emptyRecentsOverlay }
+    }
+
+    private var callsBaseContent: some View {
+        callsList
+            .listStyle(.plain)
+            .safeAreaInset(edge: .top, spacing: 8) {
+                favouritesStrip
+            }
+            .scrollDismissesKeyboard(.immediately)
+            .refreshable {
+                model.requestSync()
+            }
     }
 
     private var callsList: some View {
