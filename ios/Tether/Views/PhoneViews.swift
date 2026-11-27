@@ -50,10 +50,22 @@ struct RecentsView: View {
                         }
                     }
                     Spacer(minLength: 8)
-                    Text(shortTime(e.date))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
+                    VStack(alignment: .trailing, spacing: 9) {
+                        Text(shortTime(e.date))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                        Button { model.dial(e.num, sub: e.sub) } label: {
+                            Image(systemName: "phone.fill")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color("AccentColor"))
+                                .frame(width: 32, height: 32)
+                                .background(Color(.tertiarySystemFill), in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!model.linkState.isConnected)
+                        .accessibilityLabel(Text("Call \\(model.displayName(e.num))"))
+                    }
                 }
                 .padding(.vertical, 6)
                 .contentShape(Rectangle())
