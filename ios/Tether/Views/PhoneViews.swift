@@ -77,6 +77,7 @@ struct RecentsView: View {
                 }
             }
             .listStyle(.plain)
+            .safeAreaInset(edge: .top, spacing: 8) { favouritesStrip }
             .scrollDismissesKeyboard(.immediately)
             .refreshable { model.requestSync() }
             .onAppear { model.markRecentsSeen() }
@@ -137,6 +138,58 @@ struct RecentsView: View {
                 }
 
             }
+        }
+    }
+
+    /// The first three starred contacts synced from the Android phone, matching the reference Calls screen.
+    @ViewBuilder private var favouritesStrip: some View {
+        if !search.isEmpty {
+            EmptyView()
+        } else if !model.favourites.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(Array(model.favourites.prefix(3))) { contact in
+                        Button {
+                            if let phone = contact.phones.first {
+                                model.dial(phone.n, sub: model.preferredSim(for: phone.n))
+                            }
+                        } label: {
+                            VStack(spacing: 9) {
+                                Avatar(name: contact.name, photo: model.photo(for: contact), size: 58)
+                                    .padding(5)
+                                    .background(.white.opacity(0.16), in: Circle())
+                                Text(contact.name)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .frame(maxWidth: .infinity)
+                                Image(systemName: "phone.fill")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 34, height: 34)
+                                    .background(.white.opacity(0.18), in: Circle())
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 13)
+                            .frame(width: 142, height: 154)
+                            .background(
+                                LinearGradient(colors: [Color(red: 0.20, green: 0.52, blue: 0.96),
+                                                        Color(red: 0.08, green: 0.17, blue: 0.39)],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing),
+                                in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            )
+                            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .strokeBorder(.white.opacity(0.16), lineWidth: 1))
+                            .shadow(color: .blue.opacity(0.16), radius: 8, y: 4)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(contact.phones.isEmpty || !model.linkState.isConnected)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 4)
+            }
+            .background(.clear)
         }
     }
 
