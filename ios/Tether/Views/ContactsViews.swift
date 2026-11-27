@@ -26,7 +26,7 @@ struct ContactsView: View {
                             } label: {
                                 HStack(spacing: 12) {
                                     Avatar(name: c.name, photo: model.photo(for: c), size: 36)
-                                    Text(c.name).font(.body).lineLimit(1)
+                                    contactName(c.name).lineLimit(1)
                                     if c.starred {
                                         Image(systemName: "star.fill")
                                             .font(.caption2)
@@ -61,6 +61,14 @@ struct ContactsView: View {
             }
             .sheet(isPresented: $adding) { AddContactView().environment(\.appModel, AppModel.shared).environment(\.router, Router.shared) }
         }
+    }
+
+    /// Keep given names regular and emphasize the family name in the contact list.
+    private func contactName(_ full: String) -> Text {
+        let parts = full.split(separator: " ", omittingEmptySubsequences: true)
+        guard parts.count > 1, let last = parts.last else { return Text(full).font(.body) }
+        let first = parts.dropLast().joined(separator: " ")
+        return Text(first + " ").font(.body) + Text(String(last)).font(.body.weight(.semibold))
     }
 
     private var groupedContacts: [(letter: String, contacts: [Contact])] {

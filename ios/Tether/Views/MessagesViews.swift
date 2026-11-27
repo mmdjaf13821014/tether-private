@@ -12,6 +12,7 @@ struct MessagesView: View {
     @State private var deleting: Conversation?
     @State private var blocking: String?
     @State private var senderFilter: SenderFilter = .all
+    @State private var editMode: EditMode = .inactive
 
     private enum SenderFilter: String {
         case all, known, unknown
@@ -37,6 +38,7 @@ struct MessagesView: View {
                     .scrollDismissesKeyboard(.immediately)
                     .refreshable { model.requestSync() }
                     .navigationTitle("Messages")
+                    .environment(\.editMode, $editMode)
                     .toolbarBackground(.visible, for: .navigationBar)
                     .toolbar { messagesToolbar }
                     .navigationDestination(for: Int64.self) { ThreadView(thread: $0) }
@@ -112,6 +114,10 @@ struct MessagesView: View {
                     }
                     .contextMenu { conversationMenu(conversation) }
                 }
+                .onDelete { offsets in
+                    guard let index = offsets.first, filteredConversations.indices.contains(index) else { return }
+                    deleting = filteredConversations[index]
+                }
             } else {
                 ForEach(searchHits) { message in
                     NavigationLink(value: message.thread) {
@@ -135,6 +141,12 @@ struct MessagesView: View {
     @ToolbarContentBuilder
     private var messagesToolbar: some ToolbarContent {
         ToolbarItem(placement: .navigationBarLeading) {
+            Button(editMode.isEditing ? "Done" : "Edit") {
+                withAnimation { editMode = editMode.isEditing ? .inactive : .active }
+            }
+            .disabled(filteredConversations.isEmpty)
+        }
+        ToolbarItem(placement: .navigationBarTrailing) {
             Menu {
                 Picker("Messages", selection: $senderFilter) {
                     Text("All Messages").tag(SenderFilter.all)
